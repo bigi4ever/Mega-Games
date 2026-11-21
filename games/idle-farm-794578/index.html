@@ -30,6 +30,7 @@
   .choice .ic { font-size:30px; }
   .hidden { display:none !important; }
   .credit { font-size:12px; opacity:.5; margin-top:14px; }
+  .snd { background:none; border:1px solid var(--grid); color:var(--fg); border-radius:99px; padding:6px 14px; margin-top:12px; font:inherit; font-size:14px; cursor:pointer; opacity:.85; }
   #app { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; padding:52px 12px 12px; box-sizing:border-box; z-index:4; pointer-events:none; }
 #app > * { pointer-events:auto; }
 .money { font-size:40px; font-weight:900; color:var(--accent); text-shadow:0 3px 10px #000a; }
@@ -89,16 +90,36 @@ const store = {
   set(k, v) { try { localStorage.setItem(CFG.slug + ':' + k, JSON.stringify(v)); } catch (e) {} },
 };
 
-let AC = null, muted = store.get('muted', false);
+let AC = null, MASTER = null, muted = store.get('muted', false);
+// מנוע הצלילים: מתנד -> עוצמה -> מדחס -> יציאה. הדפדפן מאפשר להפעיל צלילים רק אחרי מגע או מקש,
+// לכן המנוע נוצר ו"משוחרר" במגע הראשון בכל מקום בדף.
+function audio() {
+  if (!AC) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    AC = new Ctx();
+    const comp = AC.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6;
+    MASTER = AC.createGain(); MASTER.gain.value = 0.9;
+    MASTER.connect(comp).connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume().catch(() => {});
+  return AC;
+}
+for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, () => { try { audio(); } catch (e) {} }, { capture: true, passive: true });
+function setMuted(v) { muted = v; store.set('muted', v); }
 function beep(freq = 440, dur = 0.08, type = 'square', vol = 0.04) {
   if (muted) return;
   try {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, AC.currentTime);
-    g.gain.setValueAtTime(vol, AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
-    o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + dur);
+    const ac = audio(); if (!ac) return;
+    const t0 = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    // העוצמות בתבניות קטנות (0.01-0.06), ולכן מוגברות כאן; גלים רכים (sine/triangle) מקבלים יותר
+    const level = Math.min(0.6, vol * (type === 'sine' || type === 'triangle' ? 9 : 5));
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(level, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.04);
+    o.connect(g).connect(MASTER); o.start(t0); o.stop(t0 + dur + 0.05);
   } catch (e) {}
 }
 
@@ -174,6 +195,11 @@ function hud(right = '', left = '') {
 function showCard(html) { $card.innerHTML = html; $ov.classList.remove('hidden'); }
 function hideCard() { $ov.classList.add('hidden'); }
 
+const soundBtn = () => `<div><button class="snd" id="snd">${muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'}</button></div>`;
+function wireSound() {
+  const b = document.getElementById('snd'); if (!b) return;
+  b.onclick = () => { setMuted(!muted); b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; if (!muted) beep(660, 0.12, 'triangle', 0.05); };
+}
 function menu() {
   G.state = 'menu';
   const best = store.get('best', 0);
@@ -183,8 +209,10 @@ function menu() {
     <p>${CFG.howto}</p>
     ${best ? `<div class="stat">🏆 שיא: ${fmt(best)}</div>` : ''}
     <button class="btn" id="play">▶ שחק</button>
+    ${soundBtn()}
     <div class="credit">${CFG.genreName} · ${T.name} · נוצר אוטומטית ע"י Game Forge</div>`);
   document.getElementById('play').onclick = startGame;
+  wireSound();
 }
 function startGame() {
   hideCard(); fx.length = 0; G.score = 0; G.state = 'play'; game.reset(); beep(660, 0.1, 'triangle');
@@ -201,8 +229,10 @@ function gameOver(score, extra = '') {
       <div class="stat">ניקוד: ${fmt(score)}</div>
       ${extra ? `<p>${extra}</p>` : ''}
       <p>שיא: ${fmt(Math.max(prev, score))}</p>
-      <button class="btn" id="again">↻ שוב</button>`);
+      <button class="btn" id="again">↻ שוב</button>
+      ${soundBtn()}`);
     document.getElementById('again').onclick = startGame;
+    wireSound();
   }, 450);
 }
 
@@ -226,6 +256,7 @@ cv.addEventListener('pointerup', e => { if (active()) game.up?.(...ptr(e)); });
 cv.addEventListener('pointercancel', e => { if (ready() && G.state === 'play') game.up?.(...ptr(e)); });
 window.addEventListener('keydown', e => {
   keys.add(e.code);
+  if (e.code === 'KeyM') { setMuted(!muted); const b = document.getElementById('snd'); if (b) b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; }
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
   if ((e.code === 'Space' || e.code === 'Enter') && (G.state === 'menu' || G.state === 'over') && !$ov.classList.contains('hidden')) {
     const b = $card.querySelector('.btn'); if (b) { b.click(); return; }
@@ -300,7 +331,7 @@ function render() {
     const gain = Math.floor(Math.sqrt(s.total / PRESTIGE_AT));
     s = fresh(s.prestige + gain); save(); beep(1000, 0.3, 'sine');
   };
-  document.getElementById('bmute').onclick = () => { muted = !muted; store.set('muted', muted); };
+  document.getElementById('bmute').onclick = () => setMuted(!muted);
 }
 
 function fresh(prestige = 0) { return { money: 0, total: 0, owned: T.buildings.map(() => 0), clickLvl: 0, clicks: 0, prestige, t: Date.now() }; }

@@ -61,7 +61,7 @@ function render() {
     const gain = Math.floor(Math.sqrt(s.total / PRESTIGE_AT));
     s = fresh(s.prestige + gain); save(); beep(1000, 0.3, 'sine');
   };
-  document.getElementById('bmute').onclick = () => { muted = !muted; store.set('muted', muted); };
+  document.getElementById('bmute').onclick = () => setMuted(!muted);
 }
 
 function fresh(prestige = 0) { return { money: 0, total: 0, owned: T.buildings.map(() => 0), clickLvl: 0, clicks: 0, prestige, t: Date.now() }; }
