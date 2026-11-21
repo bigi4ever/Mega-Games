@@ -302,10 +302,17 @@ ${pwa ? `<link rel="manifest" href="manifest.webmanifest">
 body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:1040px;margin:0 auto;padding:28px 16px 60px}
 h1{margin:0;font-size:36px}.sub{color:var(--mut);margin:6px 0 18px;line-height:1.5}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.head h1{white-space:nowrap}
+.fbtn{font:inherit;font-size:15px;font-weight:800;padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;min-width:0;max-width:48%}
+#flabel{overflow:hidden;text-overflow:ellipsis}
+.fbtn.active{background:var(--acc);color:#111;border-color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:-6px 0 20px}
+.chips[hidden]{display:none}
 .chips button{font:inherit;font-size:14px;font-weight:700;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer}
 .chips button.on{background:var(--acc);color:#111;border-color:var(--acc)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.fic{display:inline-block;min-width:1em}
 .g{position:relative;display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:18px;text-decoration:none;color:#fff;
 background:linear-gradient(160deg,var(--b2),var(--b));border:2px solid transparent;transition:transform .15s,border-color .15s}
 .g:hover,.g:focus-visible{transform:translateY(-3px);border-color:var(--a);outline:none}
@@ -317,19 +324,35 @@ background:linear-gradient(160deg,var(--b2),var(--b));border:2px solid transpare
 .ic.sm{position:absolute;bottom:8px;right:8px;font-size:30px;line-height:1;background:#0008;border-radius:12px;padding:6px}
 .new{z-index:1;position:absolute;top:12px;left:12px;font-size:11px;font-weight:900;padding:3px 8px;border-radius:99px;background:var(--a);color:#111}
 footer{margin-top:36px;color:var(--mut);font-size:13px}
-@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.th{margin:-14px -14px 2px}.ic{font-size:42px}.ic.sm{font-size:22px}.tt{font-size:16px}h1{font-size:30px}}
+@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.th{margin:-14px -14px 2px}.ic{font-size:42px}.ic.sm{font-size:22px}.tt{font-size:16px}h1{font-size:25px}.fbtn{font-size:14px;padding:8px 12px;max-width:56%}}
 </style></head><body><div class="wrap">
-<h1>🎮 Mega Games</h1>
-<div class="sub">${manifest.length} משחקים חינמיים שנוצרו אוטומטית לפי הז'אנרים הפופולריים. בלי הורדה, בלי הרשמה: בוחרים ומשחקים, גם בנייד.</div>
-<div class="chips" id="chips"><button class="on" data-g="">הכול</button>${genres.map(g => `<button data-g="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+<div class="head"><h1>🎮 Mega Games</h1>
+<button class="fbtn" id="fbtn" aria-expanded="false" aria-controls="chips"><span id="flabel">סינון</span> <span class="fic" id="fic">▾</span></button></div>
+<div class="chips" id="chips" hidden><button class="on" data-g="">הכול</button>${genres.map(g => `<button data-g="${esc(g)}">${esc(g)}</button>`).join('')}</div>
 <div class="grid">${cards}</div>
 <footer>נוצר ע"י Game Forge</footer>
 </div>
 <script>
-${pwa ? "if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});\n" : ''}document.getElementById('chips').addEventListener('click', e => {
+${pwa ? "if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});\n" : ''}const chips = document.getElementById('chips'), fbtn = document.getElementById('fbtn');
+let current = '';
+function apply(g) {
+  current = g;
+  chips.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.g === g));
+  document.querySelectorAll('.g').forEach(c => c.classList.toggle('hide', !!g && c.dataset.genre !== g));
+  document.getElementById('flabel').textContent = g || 'סינון';
+  document.getElementById('fic').textContent = g ? '✕' : '▾';
+  fbtn.classList.toggle('active', !!g);
+}
+function toggle(open) { chips.hidden = !open; fbtn.setAttribute('aria-expanded', String(open)); }
+fbtn.addEventListener('click', e => {
+  // כשיש סינון פעיל, לחיצה על ✕ מבטלת אותו; אחרת הכפתור פותח וסוגר את רשימת הז'אנרים
+  if (current && e.target.id === 'fic') { apply(''); toggle(false); return; }
+  toggle(chips.hidden);
+});
+chips.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#chips button').forEach(x => x.classList.toggle('on', x === b));
-  document.querySelectorAll('.g').forEach(c => c.classList.toggle('hide', !!b.dataset.g && c.dataset.genre !== b.dataset.g));
+  apply(b.dataset.g); toggle(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 </script></body></html>`;
 }
