@@ -234,6 +234,15 @@ const SHAPES = [
 const COLORS = ['#ff5d5d', '#ffb13b', '#ffe14d', '#5ddc6a', '#3ec9ff', '#6f7bff', '#c86bff', '#ff6bc4'];
 
 let board, tray, drag, bx, by, cs, combo, sincClear, clearing, lines;
+// וריאציות: 'bombs' = פצצות עם ספירה לאחור שיורדת בכל הנחה; 'stars' = אוספים כוכבים כדי לעבור שלב
+const VAR = S.variant || 'classic';
+let placements = 0, level = 1, starsLeft = 0;
+const emptyCells = () => board.map((c, i) => (c ? -1 : i)).filter(i => i >= 0);
+function placeStars(n) {
+  // כוכב לא יושלם לשורה מלאה מיד: מפזרים בתאים ריקים בלבד
+  const empty = emptyCells().sort(() => Math.random() - 0.5);
+  for (const i of empty.slice(0, n)) { board[i] = { c: '#f5c542', e: '⭐', star: true }; starsLeft++; }
+}
 
 function fits(sh, gx, gy) {
   return sh.cells.every(([x, y]) => { const X = gx + x, Y = gy + y; return X >= 0 && Y >= 0 && X < N && Y < N && !board[Y * N + X]; });
@@ -274,6 +283,8 @@ const game = {
   reset() {
     game.resize();
     board = new Array(N * N).fill(null); combo = 0; sincClear = 0; clearing = []; lines = 0; G.maxCombo = 0; drag = null;
+    placements = 0; level = 1; starsLeft = 0;
+    if (VAR === 'stars') placeStars(3);
     refill();
   },
   down(x, y) {
@@ -307,12 +318,36 @@ const game = {
         cols.forEach(c => { for (let j = 0; j < N; j++) set.add(j * N + c); });
         for (const i of set) {
           const cell = board[i]; board[i] = null;
+          const px = bx + (i % N + 0.5) * cs, py = by + (((i / N) | 0) + 0.5) * cs;
+          if (cell.bomb) { G.score += 50; floatText(px, py - 20, '💣 נוטרלה +50', P.fg, 18); }
+          if (cell.star) { G.score += 100; starsLeft--; floatText(px, py - 20, '⭐ +100', P.accent, 20); beep(1200, 0.1, 'sine', 0.04); }
           clearing.push({ i, cell, t: 0.35 });
           burst(bx + (i % N + 0.5) * cs, by + (((i / N) | 0) + 0.5) * cs, cell.c, 3, 140);
         }
         floatText(W / 2, by + cs * N / 2, (combo > 1 ? `קומבו ×${combo}! ` : '') + '+' + pts, P.accent, 30);
         [0, 1, 2].slice(0, Math.min(3, n)).forEach(k => setTimeout(() => beep(660 + k * 220 + combo * 60, 0.12, 'triangle', 0.05), k * 70));
       } else if (++sincClear >= 3) combo = 0;
+      placements++;
+      if (VAR === 'bombs') {
+        // כל פצצה שנשארה מתקרבת לפיצוץ; כל 4 הנחות מופיעה פצצה חדשה
+        for (let i = 0; i < N * N; i++) {
+          const c = board[i];
+          if (c && c.bomb && --c.bomb <= 0) {
+            burst(bx + (i % N + 0.5) * cs, by + (((i / N) | 0) + 0.5) * cs, P.danger, 50, 300);
+            gameOver(G.score, `💥 הפצצה התפוצצה · ניקית ${lines} שורות`); drag = null; return;
+          }
+        }
+        if (placements % 4 === 0) {
+          const empty = emptyCells();
+          if (empty.length) { const i = pick(empty); board[i] = { c: '#3a3a44', e: '💣', bomb: S.bombTimer }; beep(200, 0.15, 'square', 0.04); }
+        }
+      }
+      if (VAR === 'stars' && starsLeft <= 0) {
+        level++; const bonus = 200 * level; G.score += bonus;
+        floatText(W / 2, by + cs * N / 2 - 40, `שלב ${level}! +${bonus}`, P.accent, 30);
+        beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
+        placeStars(Math.min(8, level + 2));
+      }
       if (tray.every(t => !t)) refill();
       checkOver();
     } else beep(150, 0.05, 'sine', 0.02);
@@ -351,7 +386,13 @@ const game = {
     }
     for (let i = 0; i < N * N; i++) {
       const x = bx + (i % N) * cs, y = by + ((i / N) | 0) * cs, b = board[i];
-      if (b) block(x, y, cs, willClear.has(i) ? P.fg : b.c, b.e);
+      if (b) {
+        block(x, y, cs, willClear.has(i) ? P.fg : b.c, b.e);
+        if (b.bomb) {
+          ctx.fillStyle = b.bomb <= 2 ? P.danger : '#fff'; ctx.font = `900 ${cs * 0.34}px system-ui`; ctx.textAlign = 'center';
+          ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.strokeText(b.bomb, x + cs * 0.74, y + cs * 0.36); ctx.fillText(b.bomb, x + cs * 0.74, y + cs * 0.36);
+        }
+      }
       else { ctx.fillStyle = willClear.has(i) ? P.accent + '44' : P.bg; roundRect(x + 2, y + 2, cs - 4, cs - 4, cs * 0.16); ctx.fill(); }
     }
     for (const c of clearing) {
@@ -371,7 +412,8 @@ const game = {
       for (const [x, y] of sh.cells) block(drag.x - sh.w * cs / 2 + x * cs, drag.y - sh.h * cs / 2 + y * cs, cs, drag.p.color, drag.p.e, 0.9);
     }
     drawFx();
-    hud(`⭐ ${fmt(G.score)}`, combo > 1 ? `🔥 קומבו ×${combo}` : `🧱 ${lines} שורות`);
+    const info = VAR === 'stars' ? `שלב ${level} · ⭐ נשארו ${starsLeft}` : combo > 1 ? `🔥 קומבו ×${combo}` : `🧱 ${lines} שורות`;
+    hud(`🏆 ${fmt(G.score)}`, info);
   },
 };
 

@@ -1,5 +1,8 @@
 // הישרדות מול גלים: זזים, הנשק יורה לבד, אוספים ניסיון ובוחרים שדרוגים.
 let pl, enemies, bullets, gems, t, kills, spawnAcc, fireAcc, st, xp, xpNeed, level, joy, bossT, shake;
+// וריאציות: 'zone' = אזור בטוח שמתכווץ וזז; 'orbiter' = בלי נשק, רק מגינים מסתובבים
+const VAR = S.variant || 'classic';
+let zone;
 
 const UPGRADES = [
   { id: 'dmg', icon: '💥', name: 'כוח אש', desc: '+1 נזק לכל קליע', apply: () => st.dmg += 1 },
@@ -10,7 +13,10 @@ const UPGRADES = [
   { id: 'pierce', icon: '🗡️', name: 'חדירה', desc: 'קליע עובר דרך עוד אויב', apply: () => st.pierce += 1 },
   { id: 'heal', icon: '❤️', name: 'לב נוסף', desc: '+1 חיים מקסימליים וריפוי מלא', apply: () => { pl.maxHp += 1; pl.hp = pl.maxHp; } },
   { id: 'orbit', icon: T.pickup, name: 'מגן מסתובב', desc: 'כדור מגן שפוגע באויבים קרובים', apply: () => st.orbs += 1 },
+  { id: 'spin', icon: '🌀', name: 'סחרור', desc: '+25% מהירות סיבוב המגינים', only: 'orbiter', apply: () => st.spin *= 1.25 },
+  { id: 'reach', icon: '📏', name: 'טווח', desc: '+20% רדיוס המגינים', only: 'orbiter', apply: () => st.orbR *= 1.2 },
 ];
+const NOT_FOR = { orbiter: ['rate', 'shots', 'pierce'] };
 
 function spawnEnemy(boss) {
   const a = Math.random() * Math.PI * 2, R = Math.max(W, H) / 2 + 80;
@@ -26,7 +32,7 @@ function spawnEnemy(boss) {
 function levelUp() {
   level++; xp -= xpNeed; xpNeed = Math.floor(xpNeed * 1.35 + 3);
   G.state = 'pause'; beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.15, 'triangle'), 120);
-  const opts = [...UPGRADES].sort(() => Math.random() - 0.5).slice(0, 3);
+  const opts = UPGRADES.filter(u => (!u.only || u.only === VAR) && !(NOT_FOR[VAR] || []).includes(u.id)).sort(() => Math.random() - 0.5).slice(0, 3);
   showCard(`<h1>עלית לשלב ${level}!</h1><p>בחר שדרוג:</p>` +
     opts.map((u, i) => `<button class="choice" data-i="${i}"><span class="ic">${u.icon}</span><span><b>${u.name}</b><br><small>${u.desc}</small></span></button>`).join(''));
   $card.querySelectorAll('.choice').forEach(b => b.onclick = () => {
@@ -47,7 +53,9 @@ const game = {
     pl = { x: 0, y: 0, hp: S.hp, maxHp: S.hp, inv: 0, face: 1 };
     enemies = []; bullets = []; gems = [];
     t = 0; kills = 0; spawnAcc = 0; fireAcc = 0; level = 1; xp = 0; xpNeed = 5; bossT = S.bossEvery; shake = 0; joy = null;
-    st = { dmg: 1, rate: S.fireRate, shots: 1, speed: S.playerSpeed, magnet: 70, pierce: 0, orbs: 0 };
+    st = { dmg: 1, rate: S.fireRate, shots: 1, speed: S.playerSpeed, magnet: 70, pierce: 0, orbs: 0, spin: 3, orbR: 70 };
+    if (VAR === 'orbiter') { st.orbs = 3; st.dmg = 1; }
+    zone = VAR === 'zone' ? { x: 0, y: 0, r: clamp(Math.min(W, H) * 0.47, 170, 420), tx: 0, ty: 0, hurt: 0 } : null; // מתחיל בתוך המסך, כדי שרואים אותו מיד
   },
   down(x, y) { joy = { sx: x, sy: y, x, y, dx: 0, dy: 0 }; },
   move(x, y) {
@@ -84,7 +92,7 @@ const game = {
     }
 
     fireAcc += dt;
-    if (fireAcc >= 1 / st.rate && enemies.length) {
+    if (VAR !== 'orbiter' && fireAcc >= 1 / st.rate && enemies.length) {
       fireAcc = 0;
       let best = null, bd = 1e9;
       for (const e of enemies) { const d = dist(e.x, e.y, pl.x, pl.y); if (d < bd) { bd = d; best = e; } }
@@ -113,9 +121,23 @@ const game = {
       if (dead) bullets.splice(i, 1);
     }
 
+    // אזור מתכווץ: המרכז נודד לאט, הרדיוס קטן; מחוץ לאזור מאבדים לב כל שנייה וחצי
+    if (zone) {
+      zone.r = Math.max(100, zone.r - S.zoneShrink * dt);
+      if (dist(zone.x, zone.y, zone.tx, zone.ty) < 10) { const a = Math.random() * 7, d = rand(0, zone.r * 0.8); zone.tx = zone.x + Math.cos(a) * d; zone.ty = zone.y + Math.sin(a) * d; }
+      const zd = dist(zone.x, zone.y, zone.tx, zone.ty) || 1;
+      zone.x += (zone.tx - zone.x) / zd * 22 * dt; zone.y += (zone.ty - zone.y) / zd * 22 * dt;
+      if (dist(pl.x, pl.y, zone.x, zone.y) > zone.r) {
+        zone.hurt += dt;
+        if (zone.hurt > 1.5) {
+          zone.hurt = 0; pl.hp--; shake = 0.25; beep(90, 0.15, 'sawtooth', 0.06); floatText(pl.x, pl.y - 40, 'מחוץ לאזור!', P.danger, 20);
+          if (pl.hp <= 0) { const m = Math.floor(t / 60), s = Math.floor(t % 60); gameOver(kills, `שרדת ${m}:${String(s).padStart(2, '0')} · שלב ${level}`); return; }
+        }
+      } else zone.hurt = 0;
+    }
     // מגינים מסתובבים
     for (let k = 0; k < st.orbs; k++) {
-      const a = t * 3 + k * Math.PI * 2 / st.orbs, ox = pl.x + Math.cos(a) * 70, oy = pl.y + Math.sin(a) * 70;
+      const a = t * st.spin + k * Math.PI * 2 / st.orbs, ox = pl.x + Math.cos(a) * st.orbR, oy = pl.y + Math.sin(a) * st.orbR;
       for (let j = enemies.length - 1; j >= 0; j--) {
         const e = enemies[j];
         if (e.hit <= 0 && dist(ox, oy, e.x, e.y) < e.r + 12) { e.hp -= st.dmg; e.hit = 0.25; if (e.hp <= 0) killEnemy(e, j); }
@@ -163,8 +185,15 @@ const game = {
     for (const b of bullets) { ctx.beginPath(); ctx.arc(b.x - cx, b.y - cy, 4.5, 0, 7); ctx.fill(); }
     ctx.shadowBlur = 0;
     for (let k = 0; k < st.orbs; k++) {
-      const a = t * 3 + k * Math.PI * 2 / st.orbs;
-      drawEmoji(T.pickup, pl.x + Math.cos(a) * 70 - cx, pl.y + Math.sin(a) * 70 - cy, 24);
+      const a = t * st.spin + k * Math.PI * 2 / st.orbs;
+      drawEmoji(T.pickup, pl.x + Math.cos(a) * st.orbR - cx, pl.y + Math.sin(a) * st.orbR - cy, VAR === 'orbiter' ? 30 : 24);
+    }
+    if (zone) {
+      // הכהיית מה שמחוץ לאזור, וטבעת סכנה
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.arc(zone.x - cx, zone.y - cy, zone.r, 0, Math.PI * 2, true);
+      ctx.fillStyle = P.danger + '33'; ctx.fill('evenodd'); ctx.restore();
+      ctx.strokeStyle = P.danger; ctx.lineWidth = 3; ctx.setLineDash([12, 8]);
+      ctx.beginPath(); ctx.arc(zone.x - cx, zone.y - cy, zone.r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
     }
     if (!(pl.inv > 0 && Math.floor(pl.inv * 12) % 2)) drawEmoji(T.hero, pl.x - cx, pl.y - cy, 38, pl.face > 0);
     drawFx(cx, cy);

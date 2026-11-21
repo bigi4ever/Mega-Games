@@ -223,6 +223,17 @@ const N = 8;
 const BG = ['#ff5d73', '#ffb02e', '#ffe14d', '#4cd97b', '#3ec9ff', '#b77bff'];
 const K = S.kinds;
 let grid, bx, by, cs, sel, drag, phase, pair, combo, level, moves, levelStart, target, idc = 0;
+// וריאציות: 'ice' = מנפצים את כל הקרח לפני שנגמרים המהלכים; 'timed' = בלי מגבלת מהלכים, נגד השעון
+const VAR = S.variant || 'classic';
+let ice = [], iceTotal = 0, timeLeft = 0;
+const iceLeft = () => ice.filter(Boolean).length;
+function makeIce() {
+  ice = new Array(N * N).fill(false);
+  const n = Math.min(N * N - 8, 10 + level * 5);
+  const cells = [...Array(N * N).keys()].sort(() => Math.random() - 0.5).slice(0, n);
+  for (const i of cells) ice[i] = true;
+  iceTotal = n;
+}
 
 const tile = t => ({ t, sp: null, ox: 0, oy: 0, vy: 0, id: idc++ });
 const inB = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
@@ -292,6 +303,7 @@ function explode(seed, create = [], colorAll = null) {
     const px = bx + (x + 0.5) * cs, py = by + (y + 0.5) * cs; sx += px; sy += py;
     burst(px, py, c.t >= 0 ? BG[c.t] : P.accent, 4, 150);
     grid[y][x] = null;
+    if (ice[i]) { ice[i] = false; G.score += 20; burst(px, py, '#bfe9ff', 10, 180); }
   }
   for (const cr of create) { const c = tile(cr.t); c.sp = cr.sp; grid[cr.y][cr.x] = c; }
   floatText(sx / seen.size, sy / seen.size, '+' + pts + (combo > 1 ? ` ×${combo}` : ''), P.accent, 22 + Math.min(10, combo * 2));
@@ -347,6 +359,8 @@ function trySwap(a, b) {
 
 function nextLevel() {
   level++; levelStart = G.score; moves = S.moves; target = Math.round(S.target * level * (1 + level * 0.15));
+  if (VAR === 'ice') { moves = S.moves + 4 + level; makeIce(); }
+  if (VAR === 'timed') { timeLeft = level === 1 ? S.time : timeLeft + 20; target = Math.round(target * 0.8); }
 }
 
 function cellAt(x, y) {
@@ -365,7 +379,7 @@ const game = {
     freshBoard();
   },
   down(x, y) {
-    if (phase !== 'idle') return;
+    if (phase !== 'idle' || (VAR === 'timed' && timeLeft <= 0)) return;
     const c = cellAt(x, y); if (!c) return;
     drag = { x, y, c };
   },
@@ -383,6 +397,10 @@ const game = {
     else sel = sel && sel[0] === c[0] && sel[1] === c[1] ? null : c;
   },
   update(dt) {
+    if (VAR === 'timed') {
+      timeLeft -= dt;
+      if (timeLeft <= 0 && phase === 'idle' && settled()) { gameOver(G.score, `הזמן נגמר · הגעת לשלב ${level}`); return; }
+    }
     for (const row of grid) for (const c of row) {
       if (!c) continue;
       if (c.ox) { const s = Math.sign(c.ox); c.ox -= s * 900 * dt; if (Math.sign(c.ox) !== s) c.ox = 0; }
@@ -409,14 +427,22 @@ const game = {
     else if (phase === 'fall') {
       if (resolve(null)) return;
       phase = 'idle'; combo = 0;
-      if (G.score - levelStart >= target) {
+      const done = VAR === 'ice' ? iceLeft() === 0 : G.score - levelStart >= target;
+      if (done && VAR === 'timed') {
+        // בשעון לא עוצרים את המשחק: מוסיפים זמן וממשיכים
+        floatText(W / 2, by + cs * N / 2, `שלב ${level + 1}! ⏱ +20`, P.accent, 30);
+        beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
+        nextLevel();
+      } else if (VAR === 'timed' && timeLeft <= 0) {
+        gameOver(G.score, `הזמן נגמר · הגעת לשלב ${level}`);
+      } else if (done) {
         G.state = 'pause';
         const bonus = moves * 50; G.score += bonus;
         beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
         showCard(`<div class="big">${T.gems[0]}</div><h1>שלב ${level} הושלם!</h1><p>בונוס על ${moves} מהלכים שנשארו: +${bonus}</p><button class="btn" id="cont">לשלב ${level + 1} ▶</button>`);
         document.getElementById('cont').onclick = () => { hideCard(); nextLevel(); G.state = 'play'; };
-      } else if (moves <= 0) {
-        gameOver(G.score, `הגעת לשלב ${level}`);
+      } else if (VAR !== 'timed' && moves <= 0) {
+        gameOver(G.score, VAR === 'ice' ? `נשאר קרח: ${iceLeft()} 🧊 · הגעת לשלב ${level}` : `הגעת לשלב ${level}`);
       } else if (!hasMove()) {
         floatText(W / 2, by + cs * N / 2, 'אין מהלכים, מערבב…', P.fg, 22);
         freshBoard();
@@ -428,13 +454,14 @@ const game = {
     if (!grid) return;
     const size = cs * N;
     // פס התקדמות ליעד
-    const prog = clamp((G.score - levelStart) / target, 0, 1);
+    const prog = VAR === 'ice' ? clamp(1 - iceLeft() / Math.max(1, iceTotal), 0, 1) : clamp((G.score - levelStart) / target, 0, 1);
     ctx.fillStyle = P.bg2; roundRect(bx, by - 46, size, 16, 8); ctx.fill();
     ctx.fillStyle = P.accent; roundRect(bx + size * (1 - prog), by - 46, size * prog, 16, 8); ctx.fill();
     // טקסט עברי ומספרים בנפרד, כדי שכיווניות הטקסט לא תערבב את הסדר
     ctx.fillStyle = P.fg; ctx.font = '700 13px system-ui';
-    ctx.textAlign = 'right'; ctx.fillText('🎯 יעד השלב', bx + size, by - 54);
-    ctx.textAlign = 'left'; ctx.fillText(`${fmt(Math.max(0, G.score - levelStart))} / ${fmt(target)}`, bx, by - 54);
+    ctx.textAlign = 'right'; ctx.fillText(VAR === 'ice' ? '🧊 קרח שנשאר' : '🎯 יעד השלב', bx + size, by - 54);
+    ctx.textAlign = 'left';
+    ctx.fillText(VAR === 'ice' ? `${iceLeft()} / ${iceTotal}` : `${fmt(Math.max(0, G.score - levelStart))} / ${fmt(target)}`, bx, by - 54);
 
     ctx.fillStyle = P.bg2; roundRect(bx - 8, by - 8, size + 16, size + 16, 16); ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.rect(bx - 8, by - 8, size + 16, size + 16); ctx.clip();
@@ -463,9 +490,20 @@ const game = {
         drawEmoji('💥', px + cs / 2, py + cs / 2, cs * 0.5);
       } else drawEmoji(T.gems[c.t], px + cs / 2, py + cs / 2, cs * 0.58 * (isSel ? 1.08 : 1));
     }
+    // שכבת הקרח שייכת למשבצת, לא לפריט, ולכן מצוירת מעל
+    for (let i = 0; i < N * N; i++) {
+      if (!ice[i]) continue;
+      const x = bx + (i % N) * cs, y = by + ((i / N) | 0) * cs, m = cs * 0.06;
+      ctx.fillStyle = '#d8f3ff66'; roundRect(x + m, y + m, cs - 2 * m, cs - 2 * m, cs * 0.2); ctx.fill();
+      ctx.strokeStyle = '#ffffffcc'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + cs * 0.22, y + cs * 0.3); ctx.lineTo(x + cs * 0.4, y + cs * 0.18); ctx.stroke();
+    }
     ctx.restore();
     drawFx();
-    hud(`⭐ ${fmt(G.score)}`, `שלב ${level} · 👆 ${moves} מהלכים`);
+    if (VAR === 'timed') {
+      const tl = Math.max(0, Math.ceil(timeLeft));
+      hud(`⭐ ${fmt(G.score)}`, `שלב ${level} · <span style="color:${tl <= 10 ? P.danger : 'inherit'}">⏱ ${tl}</span>`);
+    } else hud(`⭐ ${fmt(G.score)}`, `שלב ${level} · 👆 ${moves} מהלכים`);
   },
 };
 

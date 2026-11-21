@@ -26,7 +26,7 @@ if (has('help') || has('h')) {
   console.log(`Game Forge: מחולל משחקים אוטומטי
 
 שימוש:
-  node src/cli.js [--count N] [--genre ID] [--theme ID] [--difficulty easy|normal|hard] [--seed S] [--out DIR]
+  node src/cli.js [--count N] [--genre ID] [--variant ID] [--theme ID] [--difficulty easy|normal|hard] [--seed S] [--out DIR]
   node src/cli.js --trends              דירוג הז'אנרים הנוכחי
   node src/cli.js --refresh-trends      מחקר טרנדים חי (דורש ANTHROPIC_API_KEY)
   node src/cli.js --invent [--idea "כיוון"]   ה-AI ממציא מכניקה חדשה (דורש ANTHROPIC_API_KEY)
@@ -145,12 +145,12 @@ const baseSeed = opt('seed', String(Date.now()));
 for (let i = 0; i < count; i++) {
   const p = plan({
     seed: count > 1 ? `${baseSeed}-${i}` : baseSeed,
-    genre: opt('genre'), theme: opt('theme'), difficulty: opt('difficulty'), made,
+    genre: opt('genre'), theme: opt('theme'), difficulty: opt('difficulty'), variant: opt('variant'), made,
   });
   const file = writeGame(p, outDir);
   made.push(p);
   console.log(`\n🎮 ${p.title}  ${p.icon}`);
-  console.log(`   ז'אנר: ${p.genreName} · נושא: ${p.themeName} · קושי: ${p.difficultyName} · seed: ${p.seed}`);
+  console.log(`   ז'אנר: ${p.genreName}${p.variant && p.variant !== 'classic' ? ' (' + p.variantName + ')' : ''} · נושא: ${p.themeName} · קושי: ${p.difficultyName} · seed: ${p.seed}`);
   console.log(`   🧠 למה: ${p.reason}`);
   console.log(`   📁 ${path.relative(process.cwd(), file)}`);
 }

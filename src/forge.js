@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GENRES } from './trends.js';
 import { THEMES } from './themes.js';
+import { variantsFor } from './variants.js';
 import { readLive } from './live-trends.js';
 import { listInventions, scaleParams, INV_DIR } from './invent.js';
 
@@ -139,7 +140,7 @@ function howtoFor(genre, t) {
 }
 
 // ---------- הבנייה ----------
-export function plan({ seed = Date.now(), genre, theme, difficulty, made = [] } = {}) {
+export function plan({ seed = Date.now(), genre, theme, difficulty, variant, made = [] } = {}) {
   const rng = makeRng(seed);
   const genres = loadGenres();
   const g = genre ? genres.find(x => x.id === genre) : rng.weighted(genres, x => genreWeight(x, made));
@@ -150,8 +151,13 @@ export function plan({ seed = Date.now(), genre, theme, difficulty, made = [] } 
   if (!d) throw new Error(`רמת קושי לא מוכרת: ${difficulty}`);
 
   const inv = g.invention;
-  const params = inv ? scaleParams(inv, d.k) : paramsFor(g.id, rng, d.k);
-  const title = inv ? fillText(rng.pick(inv.titles.length ? inv.titles : [inv.name]), t) : titleFor(g.id, t, rng);
+  // וריאציית חוקים: מעדיפים צירוף ז'אנר+וריאציה שעוד לא נבנה
+  const vs = variantsFor(g.id);
+  const v = variant ? vs.find(x => x.id === variant) : rng.weighted(vs, x => Math.pow(0.3, made.filter(m => m.genre === g.id && (m.variant || 'classic') === x.id).length));
+  if (!v) throw new Error(`וריאציה לא מוכרת: ${variant}. אפשרויות: ${vs.map(x => x.id).join(', ')}`);
+  const params = inv ? scaleParams(inv, d.k) : { ...paramsFor(g.id, rng, d.k), ...(v.params ? v.params(rng, d.k) : {}), variant: v.id };
+  const title = inv ? fillText(rng.pick(inv.titles.length ? inv.titles : [inv.name]), t)
+    : v.titles && rng.next() < 0.7 ? rng.pick(v.titles(t.words, b)) : titleFor(g.id, t, rng);
   const id = Math.floor(rng.next() * 0xffffff).toString(16).padStart(6, '0');
   const totalW = genres.reduce((a, x) => a + genreWeight(x, made), 0);
   return {
@@ -162,7 +168,8 @@ export function plan({ seed = Date.now(), genre, theme, difficulty, made = [] } 
     genre: g.id, genreName: g.name, template: g.template,
     theme: t.id, themeName: t.name,
     difficulty: d.id, difficultyName: d.name,
-    howto: inv ? fillText(inv.howto, t) : howtoFor(g.id, t),
+    howto: inv ? fillText(inv.howto, t) : v.howto ? v.howto(t) : howtoFor(g.id, t),
+    variant: v.id, variantName: v.name,
     params,
     reason: genre ? 'נבחר ידנית' :
       `${g.name}: פופולריות ${g.score}/100 (${g.source === 'חי' ? 'מחקר חי' : g.source === 'ידני' ? 'דריסה ידנית' : 'ציון בסיס'}), נוצרו כבר ${made.filter(m => m.genre === g.id).length}, ` +
@@ -177,7 +184,8 @@ export function build(p) {
   const cssFile = path.join(TPL, `${p.template}.css`);
   const css = fs.existsSync(cssFile) ? fs.readFileSync(cssFile, 'utf8') : '';
   const cfg = {
-    slug: p.slug, title: p.title, icon: p.icon, howto: p.howto, genreName: p.genreName,
+    slug: p.slug, title: p.title, icon: p.icon, howto: p.howto,
+    genreName: p.variant && p.variant !== 'classic' ? `${p.genreName} · ${p.variantName}` : p.genreName,
     theme: p.themeObj, params: p.params,
   };
   const json = JSON.stringify(cfg).replace(/</g, '\\u003c');
@@ -225,7 +233,7 @@ function renderGallery(manifest, prefix) {
     const t = THEMES.find(x => x.id === m.theme) || THEMES[0];
     return `<a class="g" data-genre="${esc(m.genreName)}" href="${prefix}${m.slug}/index.html" style="--a:${t.palette.accent};--b:${t.palette.bg};--b2:${t.palette.bg2}">
       ${i < 3 ? '<span class="new">חדש</span>' : ''}<div class="ic">${m.icon}</div><div class="tt">${esc(m.title)}</div>
-      <div class="tags"><span>${esc(m.genreName)}</span><span>${esc(m.themeName)}</span><span>${esc(m.difficultyName)}</span></div></a>`;
+      <div class="tags"><span>${esc(m.genreName)}</span>${m.variant && m.variant !== 'classic' ? `<span>${esc(m.variantName)}</span>` : ''}<span>${esc(m.themeName)}</span><span>${esc(m.difficultyName)}</span></div></a>`;
   }).join('\n');
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Mega Games</title>

@@ -3,12 +3,16 @@ const BASE_COST = [15, 110, 1200, 13000, 140000, 1.6e6];
 const BASE_PROD = [0.15, 1.2, 9, 50, 280, 1600];
 const app = document.getElementById('app');
 let s, lastSave = 0, bg = [];
+// וריאציות: 'golden' = ✨ שמופיע מדי פעם ונותן ייצור פי 7; 'combo' = לחיצות רצופות מגדילות מכפיל עד פי 10
+const VAR = S.variant || 'classic';
+let frenzy = 0, goldIn = rand(12, 25), goldEl = null, goldLife = 0, combo = 0, lastTap = 0;
+const comboMult = () => (VAR === 'combo' ? 1 + combo * 0.9 : 1);
 
 const cost = i => Math.ceil(BASE_COST[i] * Math.pow(1.15, s.owned[i]));
 const mult = i => Math.pow(2, Math.floor(s.owned[i] / 25)); // כל 25 יחידות: פי 2
 const prodOf = i => BASE_PROD[i] * S.speed * s.owned[i] * mult(i);
-const perSec = () => BASE_PROD.reduce((a, _, i) => a + prodOf(i), 0) * (1 + s.prestige * 0.1);
-const clickVal = () => S.click * Math.pow(2, s.clickLvl) + perSec() * 0.02;
+const perSec = () => BASE_PROD.reduce((a, _, i) => a + prodOf(i), 0) * (1 + s.prestige * 0.1) * (frenzy > 0 ? 7 : 1);
+const clickVal = () => (S.click * Math.pow(2, s.clickLvl) + perSec() * 0.02) * comboMult();
 const clickCost = () => Math.ceil(50 * Math.pow(6, s.clickLvl));
 const PRESTIGE_AT = 1e7;
 
@@ -33,6 +37,10 @@ function render() {
     </div>`;
   const tap = document.getElementById('tap');
   tap.addEventListener('pointerdown', e => {
+    if (VAR === 'combo') {
+      const now = performance.now();
+      combo = now - lastTap < 600 ? Math.min(10, combo + 1) : 0; lastTap = now;
+    }
     const v = clickVal(); s.money += v; s.total += v; s.clicks++;
     const el = document.createElement('div'); el.className = 'pop'; el.textContent = '+' + fmt(v);
     el.style.left = (e.clientX - 20 + rand(-20, 20)) + 'px'; el.style.top = (e.clientY - 30) + 'px';
@@ -61,7 +69,9 @@ function fresh(prestige = 0) { return { money: 0, total: 0, owned: T.buildings.m
 function refresh() {
   document.getElementById('money').textContent = `${T.currency} ${fmt(Math.floor(s.money))}`;
   document.getElementById('rate').textContent = `${fmt(perSec())} לשנייה` + (s.prestige ? ` · 🌟 בונוס ${s.prestige * 10}%` : '');
-  document.getElementById('tapinfo').textContent = `כל לחיצה: \u2066+${fmt(clickVal())}\u2069`; // בידוד LTR כדי שהפלוס יופיע לפני המספר
+  document.getElementById('tapinfo').textContent = `כל לחיצה: \u2066+${fmt(clickVal())}\u2069` // בידוד LTR כדי שהפלוס יופיע לפני המספר
+    + (VAR === 'combo' && combo > 0 ? ` · 🔥 קומבו \u2066×${comboMult().toFixed(1)}\u2069` : '')
+    + (frenzy > 0 ? ` · ✨ ייצור פי 7 (${Math.ceil(frenzy)})` : '');
   document.getElementById('clvl').textContent = s.clickLvl;
   const bc = document.getElementById('bclick'); bc.textContent = fmt(clickCost()); bc.disabled = s.money < clickCost();
   T.buildings.forEach((_, i) => {
@@ -96,6 +106,26 @@ const game = {
   },
   reset() {},
   update(dt) {
+    if (VAR === 'combo' && combo > 0 && performance.now() - lastTap > 900) combo = 0;
+    if (frenzy > 0) frenzy -= dt;
+    if (VAR === 'golden') {
+      if (goldEl) {
+        goldLife -= dt;
+        if (goldLife <= 0) { goldEl.remove(); goldEl = null; goldIn = rand(15, 35); }
+      } else if ((goldIn -= dt) <= 0) {
+        // ✨ זוהר במקום אקראי: מי שתופס אותו בזמן מקבל 15 שניות של ייצור פי 7
+        goldEl = document.createElement('button');
+        goldEl.textContent = '✨'; goldEl.setAttribute('aria-label', 'בונוס');
+        Object.assign(goldEl.style, { position: 'fixed', left: rand(10, W - 80) + 'px', top: rand(90, H - 90) + 'px', fontSize: '52px',
+          background: 'none', border: '0', cursor: 'pointer', zIndex: 7, filter: 'drop-shadow(0 0 12px gold)' });
+        goldEl.onclick = () => {
+          frenzy = 15; burst(parseFloat(goldEl.style.left) + 30, parseFloat(goldEl.style.top) + 30, '#ffd700', 30, 220);
+          floatText(W / 2, H / 2, '✨ ייצור פי 7!', '#ffd700', 30); beep(1320, 0.2, 'triangle', 0.05);
+          goldEl.remove(); goldEl = null; goldIn = rand(25, 45);
+        };
+        document.body.appendChild(goldEl); goldLife = 8; beep(990, 0.12, 'sine', 0.04);
+      }
+    }
     const g = perSec() * dt; s.money += g; s.total += g;
     lastSave += dt; if (lastSave > 5) { lastSave = 0; save(); }
     for (const b of bg) { b.y -= b.v * dt; if (b.y < -0.1) { b.y = 1.1; b.x = Math.random(); } }
