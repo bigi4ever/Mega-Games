@@ -2,7 +2,7 @@
 
 פורטל משחקי דפדפן חינמיים בעברית, שנוצרים אוטומטית ע"י **Game Forge**.
 
-**לשחק:** https://bigi4ever.github.io/mega-games/
+**לשחק:** https://bigi4ever.github.io/Mega-Games/
 
 ## איך מוסיפים משחקים לפורטל
 
