@@ -1,0 +1,62 @@
+# משחק חדש כל יום: המחולל בוחר ז'אנר לפי הטרנדים, בונה משחק, מעדכן את הפורטל ומפרסם.
+# אפשר גם להריץ ידנית: Actions -> Daily game -> Run workflow.
+# אם מוגדר סוד ANTHROPIC_API_KEY (Settings -> Secrets and variables -> Actions),
+# הטרנדים מתרעננים מהרשת פעם בשבוע (--live). בלעדיו המחולל משתמש בציוני הבסיס, בחינם.
+name: Daily game
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # כל יום ב-03:17 UTC (05:17 או 06:17 שעון ישראל)
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'כמה משחקים לבנות'
+        default: '1'
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: daily-game
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate game
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COUNT: ${{ github.event.inputs.count || '1' }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then LIVE=--live; else LIVE=; fi
+          node src/cli.js $LIVE --count "$COUNT" --seed "daily-$(date -u +%F)-${{ github.run_id }}"
+
+      - name: Commit and push
+        run: |
+          git config user.name "game-forge-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "אין שינויים"; exit 0; fi
+          TITLES=$(node -e "const m=require('./games/manifest.json');console.log(m.slice(-${COUNT:-1}).map(g=>g.title).join(', '))")
+          git commit -m "משחק יומי: $TITLES"
+          git push
+        env:
+          COUNT: ${{ github.event.inputs.count || '1' }}
+
+      # דחיפה עם GITHUB_TOKEN לא תמיד מפעילה את פרסום ה-Pages, אז מבקשים פרסום במפורש
+      - name: Request Pages build
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"

@@ -12,6 +12,13 @@ node src/cli.js --count 3       # המחולל בוחר ובונה 3 משחקי�
 git add -A && git commit -m "משחקים חדשים" && git push
 ```
 
+### משחק חדש כל יום, אוטומטית
+
+הפעולה `.github/workflows/daily-game.yml` רצה כל יום ב-03:17 UTC: המחולל בוחר ז'אנר, בונה משחק, מעדכן את דף הבית ומפרסם.
+- הרצה ידנית: **Actions ← Daily game ← Run workflow**. אפשר לבחור כמה משחקים לבנות.
+- אם מגדירים סוד `ANTHROPIC_API_KEY` (**Settings ← Secrets and variables ← Actions**), הטרנדים מתרעננים מהרשת פעם בשבוע. בלי הסוד זה עובד בחינם עם ציוני הבסיס.
+- כדי לעצור: **Actions ← Daily game ← ⋯ ← Disable workflow**.
+
 תוך דקה-שתיים אחרי ה-push, GitHub Pages מעדכן את הפורטל. דף הבית (`index.html` בשורש) נבנה מחדש אוטומטית בכל פעם שנוצר משחק, וכולל סינון לפי ז'אנר.
 
 ---
