@@ -232,11 +232,47 @@ export function writeGame(p, outDir) {
 export function writeGallery(manifest, outDir) {
   fs.writeFileSync(path.join(outDir, 'index.html'), renderGallery(manifest, ''));
   if (path.resolve(outDir) === path.join(ROOT, 'games')) {
-    fs.writeFileSync(path.join(ROOT, 'index.html'), renderGallery(manifest, 'games/'));
+    fs.writeFileSync(path.join(ROOT, 'index.html'), renderGallery(manifest, 'games/', { pwa: true }));
+    writePwa();
   }
 }
 
-function renderGallery(manifest, prefix) {
+// קבצי אפליקציה (PWA): מאפשרים "התקנה" של הפורטל בטלפון ומשחק גם בלי אינטרנט
+function writePwa() {
+  const webManifest = {
+    name: 'Mega Games', short_name: 'Mega Games',
+    description: 'משחקי דפדפן חינמיים בעברית, משחק חדש כל יום',
+    lang: 'he', dir: 'rtl', start_url: './index.html', scope: './', display: 'standalone', orientation: 'portrait',
+    background_color: '#0e0f14', theme_color: '#141033',
+    icons: [
+      { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  };
+  fs.writeFileSync(path.join(ROOT, 'manifest.webmanifest'), JSON.stringify(webManifest, null, 2));
+  // קודם רשת (תמיד הגרסה העדכנית, כולל המשחק היומי), ובלי אינטרנט מה שנשמר במטמון
+  fs.writeFileSync(path.join(ROOT, 'sw.js'), `// Service worker של הפורטל: רשת קודם, מטמון כגיבוי למשחק בלי אינטרנט
+const CACHE = 'mega-games-v1';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './manifest.webmanifest', './icons/icon-192.png'])));
+});
+self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  e.respondWith(
+    fetch(req).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+      return res;
+    }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match('./index.html') : undefined)))
+  );
+});
+`);
+}
+
+function renderGallery(manifest, prefix, { pwa = false } = {}) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   const list = [...manifest].reverse();
   const genres = [...new Set(list.map(m => m.genreName))];
@@ -251,7 +287,13 @@ function renderGallery(manifest, prefix) {
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Mega Games</title>
 <meta name="description" content="פורטל משחקי דפדפן חינמיים בעברית, שנוצרים אוטומטית לפי הז'אנרים הפופולריים">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+${pwa ? `<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#141033">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mega Games">` : `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">`}
 <style>
 :root{--bg:#0e0f14;--fg:#f1f2f6;--mut:#9aa0b4;--line:#262a36;--chip:#1b1e28;--acc:#ffcc33}
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f6f6f9;--fg:#15161c;--mut:#5d6275;--line:#dcdde5;--chip:#e8e9f0;--acc:#b8860b}}
@@ -284,7 +326,7 @@ footer{margin-top:36px;color:var(--mut);font-size:13px}
 <footer>נוצר ע"י Game Forge</footer>
 </div>
 <script>
-document.getElementById('chips').addEventListener('click', e => {
+${pwa ? "if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});\n" : ''}document.getElementById('chips').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   document.querySelectorAll('#chips button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.g').forEach(c => c.classList.toggle('hide', !!b.dataset.g && c.dataset.genre !== b.dataset.g));
