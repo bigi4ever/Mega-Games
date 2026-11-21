@@ -30,13 +30,20 @@
   .choice .ic { font-size:30px; }
   .hidden { display:none !important; }
   .credit { font-size:12px; opacity:.5; margin-top:14px; }
+  #hud .hr { display:flex; align-items:center; gap:8px; }
+  #hud #hudR, #hud #hudL { white-space:nowrap; }
+  @media (max-width:440px) { #hud { font-size:clamp(12px, 3.9vw, 17px); padding:8px 10px; gap:6px; } #home { width:34px; height:34px; font-size:16px; } }
+  #home { pointer-events:auto; width:38px; height:38px; flex:none; display:grid; place-items:center; border-radius:50%;
+    background:#0007; border:1px solid #fff3; text-decoration:none; font-size:18px; text-shadow:none; }
+  #home:active { transform:scale(.92); }
+  .home-link { display:inline-block; color:var(--fg); opacity:.85; font-size:14px; margin-top:10px; text-decoration:none; }
   .snd { background:none; border:1px solid var(--grid); color:var(--fg); border-radius:99px; padding:6px 14px; margin-top:12px; font:inherit; font-size:14px; cursor:pointer; opacity:.85; }
   
 </style>
 </head>
 <body>
 <canvas id="c" dir="ltr"></canvas>
-<div id="hud"><span id="hudR"></span><span id="hudL"></span></div>
+<div id="hud"><span class="hr"><a id="home" href="../../index.html" aria-label="חזרה לכל המשחקים" title="לכל המשחקים">🏠</a><span id="hudR"></span></span><span id="hudL"></span></div>
 <div id="app"></div>
 <div id="ov" class="hidden"><div class="card" id="card"></div></div>
 <script type="application/json" id="cfg">{"slug":"match3-candy-2f26f4","title":"מרוץ בארץ הממתקים","icon":"🍬","howto":"אין מגבלת מהלכים, יש שעון! החלף פריטים צמודים ליצירת שורות של 3. כל שלב שעוברים מוסיף זמן. כמה תספיק?","genreName":"התאמת שלוש · נגד השעון","theme":{"id":"candy","name":"ממתקים","palette":{"bg":"#3b0d36","bg2":"#5a1650","fg":"#fff0fb","accent":"#ff8ad8","danger":"#ff3355","grid":"#6e2163"},"hero":"🧁","enemies":["🍬","🍭","🍫","🍩"],"boss":"🎂","pickup":"🍒","obstacle":["🍭","🧊"],"tiers":["🍬","🍭","🍪","🍩","🧁","🍰","🎂","🍫","🍯","👑"],"gems":["🍬","🍭","🍩","🧁","🍫","🍒"],"currency":"🍬","clickable":"🍩","buildings":[["🍪","תנור עוגיות"],["🍦","מכונת גלידה"],["🧁","קונדיטוריה"],["🍫","מפעל שוקולד"],["🏭","עיר ממתקים"],["🌈","קשת סוכר"]],"words":{"place":"ארץ הממתקים","hero":"הקאפקייק","thing":"הסוכריות","adj":"מתוק"}},"params":{"kinds":6,"moves":19,"target":936,"time":50,"variant":"timed"}}</script>
@@ -174,7 +181,8 @@ function hud(right = '', left = '') {
 function showCard(html) { $card.innerHTML = html; $ov.classList.remove('hidden'); }
 function hideCard() { $ov.classList.add('hidden'); }
 
-const soundBtn = () => `<div><button class="snd" id="snd">${muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'}</button></div>`;
+const soundBtn = () => `<div><button class="snd" id="snd">${muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'}</button></div>
+  <a class="home-link" href="../../index.html">🏠 לכל המשחקים</a>`;
 function wireSound() {
   const b = document.getElementById('snd'); if (!b) return;
   b.onclick = () => { setMuted(!muted); b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; if (!muted) beep(660, 0.12, 'triangle', 0.05); };
