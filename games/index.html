@@ -1,0 +1,71 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Mega Games</title>
+<meta name="description" content="פורטל משחקי דפדפן חינמיים בעברית, שנוצרים אוטומטית לפי הז'אנרים הפופולריים">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<style>
+:root{--bg:#0e0f14;--fg:#f1f2f6;--mut:#9aa0b4;--line:#262a36;--chip:#1b1e28;--acc:#ffcc33}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f6f6f9;--fg:#15161c;--mut:#5d6275;--line:#dcdde5;--chip:#e8e9f0;--acc:#b8860b}}
+:root[data-theme="dark"]{--bg:#0e0f14;--fg:#f1f2f6;--mut:#9aa0b4;--line:#262a36;--chip:#1b1e28;--acc:#ffcc33}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 60px}
+h1{margin:0;font-size:36px}.sub{color:var(--mut);margin:6px 0 18px;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chips button{font:inherit;font-size:14px;font-weight:700;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer}
+.chips button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.g{position:relative;display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:18px;text-decoration:none;color:#fff;
+background:linear-gradient(160deg,var(--b2),var(--b));border:2px solid transparent;transition:transform .15s,border-color .15s}
+.g:hover,.g:focus-visible{transform:translateY(-3px);border-color:var(--a);outline:none}
+.g.hide{display:none}
+.ic{font-size:52px}.tt{font-size:20px;font-weight:800}
+.tags{display:flex;flex-wrap:wrap;gap:6px}.tags span{font-size:12px;padding:3px 8px;border-radius:99px;background:#ffffff1f;white-space:nowrap}
+.new{position:absolute;top:12px;left:12px;font-size:11px;font-weight:900;padding:3px 8px;border-radius:99px;background:var(--a);color:#111}
+footer{margin-top:36px;color:var(--mut);font-size:13px}
+@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.ic{font-size:42px}.tt{font-size:16px}h1{font-size:30px}}
+</style></head><body><div class="wrap">
+<h1>🎮 Mega Games</h1>
+<div class="sub">11 משחקים חינמיים שנוצרו אוטומטית לפי הז'אנרים הפופולריים. בלי הורדה, בלי הרשמה: בוחרים ומשחקים, גם בנייד.</div>
+<div class="chips" id="chips"><button class="on" data-g="">הכול</button><button data-g="קליקר / איידל">קליקר / איידל</button><button data-g="פאזל חצים">פאזל חצים</button><button data-g="ריצה אינסופית">ריצה אינסופית</button><button data-g="התאמת שלוש">התאמת שלוש</button><button data-g="פאזל בלוקים">פאזל בלוקים</button><button data-g="הישרדות מול גלים">הישרדות מול גלים</button><button data-g="מיזוג שלישיות">מיזוג שלישיות</button></div>
+<div class="grid"><a class="g" data-genre="קליקר / איידל" href="idle-farm-794578/index.html" style="--a:#ffb627;--b:#2b3a12;--b2:#3d5219">
+      <span class="new">חדש</span><div class="ic">🌽</div><div class="tt">טייקון החווה</div>
+      <div class="tags"><span>קליקר / איידל</span><span>חווה</span><span>קשה</span></div></a>
+<a class="g" data-genre="פאזל חצים" href="arrows-robots-95ec09/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
+      <span class="new">חדש</span><div class="ic">➡️</div><div class="tt">מבוך החצים</div>
+      <div class="tags"><span>פאזל חצים</span><span>רובוטים</span><span>קל</span></div></a>
+<a class="g" data-genre="ריצה אינסופית" href="runner-fantasy-6db496/index.html" style="--a:#ffd700;--b:#1a1033;--b2:#2a1a4d">
+      <span class="new">חדש</span><div class="ic">🧙</div><div class="tt">בריחה מהממלכה</div>
+      <div class="tags"><span>ריצה אינסופית</span><span>פנטזיה</span><span>קשה</span></div></a>
+<a class="g" data-genre="התאמת שלוש" href="match3-jungle-b72bef/index.html" style="--a:#ffd23f;--b:#0f2a17;--b2:#173d22">
+      <div class="ic">🍌</div><div class="tt">שלוש בג'ונגל</div>
+      <div class="tags"><span>התאמת שלוש</span><span>ג'ונגל</span><span>רגיל</span></div></a>
+<a class="g" data-genre="פאזל בלוקים" href="blockpuzzle-robots-a27890/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
+      <div class="ic">🤖</div><div class="tt">פאזל העיר הממוכנת</div>
+      <div class="tags"><span>פאזל בלוקים</span><span>רובוטים</span><span>רגיל</span></div></a>
+<a class="g" data-genre="הישרדות מול גלים" href="survivors-spooky-316990/index.html" style="--a:#ff9a1f;--b:#140b1f;--b2:#22122f">
+      <div class="ic">🎃</div><div class="tt">הדלעת נגד כולם</div>
+      <div class="tags"><span>הישרדות מול גלים</span><span>מפחיד</span><span>קשה</span></div></a>
+<a class="g" data-genre="פאזל בלוקים" href="blockpuzzle-ocean-a0bf3a/index.html" style="--a:#4dfff3;--b:#062a40;--b2:#0a3d5c">
+      <div class="ic">🐬</div><div class="tt">לבנים במעמקים</div>
+      <div class="tags"><span>פאזל בלוקים</span><span>אוקיינוס</span><span>רגיל</span></div></a>
+<a class="g" data-genre="פאזל בלוקים" href="blockpuzzle-spooky-efba2c/index.html" style="--a:#ff9a1f;--b:#140b1f;--b2:#22122f">
+      <div class="ic">🎃</div><div class="tt">פאזל בית הקברות</div>
+      <div class="tags"><span>פאזל בלוקים</span><span>מפחיד</span><span>קשה</span></div></a>
+<a class="g" data-genre="ריצה אינסופית" href="runner-ocean-196a65/index.html" style="--a:#4dfff3;--b:#062a40;--b2:#0a3d5c">
+      <div class="ic">🐬</div><div class="tt">ריצה במעמקים</div>
+      <div class="tags"><span>ריצה אינסופית</span><span>אוקיינוס</span><span>קל</span></div></a>
+<a class="g" data-genre="מיזוג שלישיות" href="merge-robots-673991/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
+      <div class="ic">💾</div><div class="tt">מיזוג ממוכן</div>
+      <div class="tags"><span>מיזוג שלישיות</span><span>רובוטים</span><span>רגיל</span></div></a>
+<a class="g" data-genre="הישרדות מול גלים" href="survivors-jungle-6c7c4f/index.html" style="--a:#ffd23f;--b:#0f2a17;--b2:#173d22">
+      <div class="ic">🐒</div><div class="tt">הקוף האחרון</div>
+      <div class="tags"><span>הישרדות מול גלים</span><span>ג'ונגל</span><span>רגיל</span></div></a></div>
+<footer>נוצר ע"י Game Forge</footer>
+</div>
+<script>
+document.getElementById('chips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#chips button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.g').forEach(c => c.classList.toggle('hide', !!b.dataset.g && c.dataset.genre !== b.dataset.g));
+});
+</script></body></html>
