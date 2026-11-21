@@ -5,7 +5,8 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 
-const RESERVED = 'CFG T P S cv ctx W H DPR G keys rand randi pick clamp dist fmt store AC MASTER muted audio setMuted soundBtn wireSound beep emojiCache drawEmoji roundRect fx burst floatText updFx drawFx $ov $card $hudR $hudL hud showCard hideCard menu startGame gameOver fit ptr booted ready active last loop'.split(' ');
+// כולל שמות גלובליים של הדפדפן שאי אפשר להגדיר מחדש ב-let/const ברמה העליונה (למשל top)
+const RESERVED = 'top window document location self parent frames Infinity NaN undefined CFG T P S cv ctx W H DPR G keys rand randi pick clamp dist fmt store AC MASTER muted audio setMuted soundBtn wireSound beep emojiCache drawEmoji roundRect fx burst floatText updFx drawFx $ov $card $hudR $hudL hud showCard hideCard menu startGame gameOver fit ptr booted ready active last loop'.split(' ');
 
 // בדיקה סטטית מהירה: תחביר, הגדרת game, והתנגשות עם שמות של זמן הריצה
 export function staticCheck(code) {

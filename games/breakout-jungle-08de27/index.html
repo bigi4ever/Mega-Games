@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>לבנים בג'ונגל</title>
+<style>
+  :root { --bg:#111; --bg2:#222; --fg:#fff; --accent:#fc3; --danger:#f44; --grid:#333; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); overflow:hidden;
+    font-family: system-ui, "Segoe UI", "Rubik", Arial, sans-serif; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center;
+    padding:10px 16px; font-weight:800; font-size:18px; pointer-events:none; text-shadow:0 2px 4px #000a; gap:10px; z-index:5; }
+  #ov { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000a;
+    backdrop-filter:blur(4px); z-index:20; padding:16px; box-sizing:border-box; }
+  .card { background:var(--bg2); border:2px solid var(--accent); border-radius:20px; padding:24px 22px;
+    width:min(420px,100%); text-align:center; box-shadow:0 12px 48px #000c; box-sizing:border-box; }
+  .card h1 { margin:0 0 6px; font-size:30px; color:var(--accent); line-height:1.2; }
+  .card h2 { margin:0 0 10px; font-size:22px; }
+  .card p { opacity:.88; line-height:1.55; margin:8px 0; }
+  .card .big { font-size:64px; line-height:1.1; margin:4px 0; }
+  .card .stat { font-size:20px; font-weight:800; margin:6px 0; }
+  .btn { background:var(--accent); color:var(--bg); border:0; border-radius:14px; padding:12px 28px; font-size:20px;
+    font-weight:900; cursor:pointer; margin:8px 4px 0; font-family:inherit; transition:transform .1s; }
+  .btn:active { transform:scale(.95); }
+  .choice { display:flex; align-items:center; gap:12px; width:100%; text-align:right; background:var(--bg);
+    color:var(--fg); border:2px solid var(--grid); border-radius:14px; padding:12px 14px; margin:8px 0; cursor:pointer;
+    font:inherit; font-size:17px; font-weight:700; }
+  .choice:hover { border-color:var(--accent); }
+  .choice .ic { font-size:30px; }
+  .hidden { display:none !important; }
+  .credit { font-size:12px; opacity:.5; margin-top:14px; }
+  #hud .hr { display:flex; align-items:center; gap:8px; }
+  #hud #hudR, #hud #hudL { white-space:nowrap; }
+  @media (max-width:440px) { #hud { font-size:clamp(12px, 3.9vw, 17px); padding:8px 10px; gap:6px; } #home { width:34px; height:34px; font-size:16px; } }
+  #home { pointer-events:auto; width:38px; height:38px; flex:none; display:grid; place-items:center; border-radius:50%;
+    background:#0007; border:1px solid #fff3; text-decoration:none; font-size:18px; text-shadow:none; }
+  #home:active { transform:scale(.92); }
+  .home-link { display:inline-block; color:var(--fg); opacity:.85; font-size:14px; margin-top:10px; text-decoration:none; }
+  .snd { background:none; border:1px solid var(--grid); color:var(--fg); border-radius:99px; padding:6px 14px; margin-top:12px; font:inherit; font-size:14px; cursor:pointer; opacity:.85; }
+  
+</style>
+</head>
+<body>
+<canvas id="c" dir="ltr"></canvas>
+<div id="hud"><span class="hr"><a id="home" href="../../index.html" aria-label="חזרה לכל המשחקים" title="לכל המשחקים">🏠</a><span id="hudR"></span></span><span id="hudL"></span></div>
+<div id="app"></div>
+<div id="ov" class="hidden"><div class="card" id="card"></div></div>
+<script type="application/json" id="cfg">{"slug":"breakout-jungle-08de27","title":"לבנים בג'ונגל","icon":"🧱","howto":"גרור את האצבע (או השתמש בחיצים) כדי להזיז את המחבט, ולחץ כדי לשגר את הכדור. שבור את כל הלבנים כדי לעבור שלב, ותפוס בונוסים שנופלים: ↔️ מחבט רחב, ✨ עוד כדורים, 🐢 האטה.","genreName":"שובר לבנים","theme":{"id":"jungle","name":"ג'ונגל","palette":{"bg":"#0f2a17","bg2":"#173d22","fg":"#eaffea","accent":"#ffd23f","danger":"#ff5a36","grid":"#1e4d2b"},"hero":"🐒","enemies":["🐍","🦂","🕷️","🐊"],"boss":"🦍","pickup":"🍌","obstacle":["🌵","🪨"],"tiers":["🌱","🌿","🍀","🌴","🌳","🍌","🥥","🦜","🐯","👑"],"gems":["🍌","🥥","🦜","🐸","🌺","🍍"],"currency":"🍌","clickable":"🌴","buildings":[["🐒","קוף קוטף"],["🦜","תוכי שליח"],["🐘","פיל סבל"],["🛖","כפר"],["🗿","מקדש"],["🌋","הר געש"]],"words":{"place":"הג'ונגל","hero":"הקוף","thing":"הבננות","adj":"פראי"}},"params":{"ballSpeed":326.4912,"padW":126,"descend":4.1574,"variant":"classic"}}</script>
+<script>
+"use strict";
+// ---------- זמן ריצה משותף לכל המשחקים ----------
+const CFG = JSON.parse(document.getElementById('cfg').textContent);
+const T = CFG.theme, P = T.palette, S = CFG.params;
+for (const [k, v] of Object.entries(P)) document.documentElement.style.setProperty('--' + k, v);
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const G = { state: 'menu', score: 0 };
+const keys = new Set();
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+const fmt = n => {
+  if (n < 1000) return (Math.round(n * 10) / 10).toLocaleString('en-US');
+  const u = ['K', 'M', 'B', 'T', 'aa', 'ab', 'ac', 'ad'];
+  let i = -1; while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+  return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + u[i];
+};
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(CFG.slug + ':' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(CFG.slug + ':' + k, JSON.stringify(v)); } catch (e) {} },
+};
+
+let AC = null, MASTER = null, muted = store.get('muted', false);
+// מנוע הצלילים: מתנד -> עוצמה -> מדחס -> יציאה. הדפדפן מאפשר להפעיל צלילים רק אחרי מגע או מקש,
+// לכן המנוע נוצר ו"משוחרר" במגע הראשון בכל מקום בדף.
+function audio() {
+  if (!AC) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    AC = new Ctx();
+    const comp = AC.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6;
+    MASTER = AC.createGain(); MASTER.gain.value = 0.9;
+    MASTER.connect(comp).connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume().catch(() => {});
+  return AC;
+}
+for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, () => { try { audio(); } catch (e) {} }, { capture: true, passive: true });
+function setMuted(v) { muted = v; store.set('muted', v); }
+function beep(freq = 440, dur = 0.08, type = 'square', vol = 0.04) {
+  if (muted) return;
+  try {
+    const ac = audio(); if (!ac) return;
+    const t0 = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    // העוצמות בתבניות קטנות (0.01-0.06), ולכן מוגברות כאן; גלים רכים (sine/triangle) מקבלים יותר
+    const level = Math.min(0.6, vol * (type === 'sine' || type === 'triangle' ? 9 : 5));
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(level, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.04);
+    o.connect(g).connect(MASTER); o.start(t0); o.stop(t0 + dur + 0.05);
+  } catch (e) {}
+}
+
+// ציור אימוג'י דרך מטמון של קנבסים קטנים (מהיר בהרבה מ-fillText בכל פריים)
+const emojiCache = new Map();
+function drawEmoji(e, x, y, size, flip = false, alpha = 1) {
+  const key = e + '|' + Math.round(size);
+  let c = emojiCache.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    const px = Math.ceil(size * 1.35 * DPR);
+    c.width = c.height = px;
+    const g = c.getContext('2d');
+    g.font = `${size * DPR}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(e, px / 2, px / 2 + size * 0.08 * DPR);
+    emojiCache.set(key, c);
+  }
+  const s = c.width / DPR;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  if (flip) ctx.scale(-1, 1);
+  ctx.drawImage(c, -s / 2, -s / 2, s, s);
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// אפקטים: חלקיקים וטקסט צף
+const fx = [];
+function burst(x, y, color, n = 10, speed = 160) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = rand(speed * 0.3, speed);
+    fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.3, 0.7), max: 0.7, color, r: rand(2, 4) });
+  }
+}
+function floatText(x, y, text, color = P.accent, size = 20) {
+  fx.push({ x, y, vx: 0, vy: -50, life: 0.9, max: 0.9, text, color, size });
+}
+function updFx(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const p = fx[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (!p.text) { p.vx *= 0.92; p.vy *= 0.92; }
+    if (p.life <= 0) fx.splice(i, 1);
+  }
+}
+function drawFx(ox = 0, oy = 0) {
+  for (const p of fx) {
+    ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+    if (p.text) {
+      ctx.fillStyle = p.color; ctx.font = `900 ${p.size}px system-ui,sans-serif`; ctx.textAlign = 'center';
+      ctx.strokeStyle = '#000a'; ctx.lineWidth = 4; ctx.strokeText(p.text, p.x - ox, p.y - oy); ctx.fillText(p.text, p.x - ox, p.y - oy);
+    } else {
+      ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x - ox, p.y - oy, p.r, 0, 7); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ממשק: HUD וכרטיסים
+const $ov = document.getElementById('ov'), $card = document.getElementById('card');
+const $hudR = document.getElementById('hudR'), $hudL = document.getElementById('hudL');
+function hud(right = '', left = '') {
+  if ($hudR._v !== right) { $hudR.innerHTML = right; $hudR._v = right; }
+  if ($hudL._v !== left) { $hudL.innerHTML = left; $hudL._v = left; }
+}
+function showCard(html) { $card.innerHTML = html; $ov.classList.remove('hidden'); }
+function hideCard() { $ov.classList.add('hidden'); }
+
+const soundBtn = () => `<div><button class="snd" id="snd">${muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'}</button></div>
+  <a class="home-link" href="../../index.html">🏠 לכל המשחקים</a>`;
+function wireSound() {
+  const b = document.getElementById('snd'); if (!b) return;
+  b.onclick = () => { setMuted(!muted); b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; if (!muted) beep(660, 0.12, 'triangle', 0.05); };
+}
+function menu() {
+  G.state = 'menu';
+  const best = store.get('best', 0);
+  showCard(`
+    <div class="big">${CFG.icon}</div>
+    <h1>${CFG.title}</h1>
+    <p>${CFG.howto}</p>
+    ${best ? `<div class="stat">🏆 שיא: ${fmt(best)}</div>` : ''}
+    <button class="btn" id="play">▶ שחק</button>
+    ${soundBtn()}
+    <div class="credit">${CFG.genreName} · ${T.name} · נוצר אוטומטית ע"י Game Forge</div>`);
+  document.getElementById('play').onclick = startGame;
+  wireSound();
+}
+function startGame() {
+  hideCard(); fx.length = 0; G.score = 0; G.state = 'play'; game.reset(); beep(660, 0.1, 'triangle');
+}
+function gameOver(score, extra = '') {
+  G.state = 'over';
+  const prev = store.get('best', 0), rec = score > prev;
+  if (rec) store.set('best', score);
+  beep(180, 0.4, 'sawtooth', 0.05);
+  setTimeout(() => {
+    showCard(`
+      <div class="big">${rec ? '🏆' : '💥'}</div>
+      <h1>${rec ? 'שיא חדש!' : 'המשחק נגמר'}</h1>
+      <div class="stat">ניקוד: ${fmt(score)}</div>
+      ${extra ? `<p>${extra}</p>` : ''}
+      <p>שיא: ${fmt(Math.max(prev, score))}</p>
+      <button class="btn" id="again">↻ שוב</button>
+      ${soundBtn()}`);
+    document.getElementById('again').onclick = startGame;
+    wireSound();
+  }, 450);
+}
+
+function fit() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  emojiCache.clear();
+  if (typeof game !== 'undefined' && game.resize) game.resize();
+}
+
+const ptr = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+// אירועי קלט יכולים להגיע לפני שסקריפט המשחק נטען (למשל אצבע על המסך בזמן הטעינה), לכן בודקים שהמשחק קיים ושהלולאה התחילה
+let booted = false;
+const ready = () => booted && typeof game !== 'undefined';
+const active = () => ready() && (G.state === 'play' || game.autostart);
+cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId); } catch {} if (active()) game.down?.(...ptr(e)); });
+cv.addEventListener('pointermove', e => { if (active()) game.move?.(...ptr(e)); });
+cv.addEventListener('pointerup', e => { if (active()) game.up?.(...ptr(e)); });
+cv.addEventListener('pointercancel', e => { if (ready() && G.state === 'play') game.up?.(...ptr(e)); });
+window.addEventListener('keydown', e => {
+  keys.add(e.code);
+  if (e.code === 'KeyM') { setMuted(!muted); const b = document.getElementById('snd'); if (b) b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; }
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  if ((e.code === 'Space' || e.code === 'Enter') && (G.state === 'menu' || G.state === 'over') && !$ov.classList.contains('hidden')) {
+    const b = $card.querySelector('.btn'); if (b) { b.click(); return; }
+  }
+  if (ready() && G.state === 'play') game.key?.(e.code);
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+</script>
+<script>
+"use strict";
+// ---------- לוגיקת המשחק (נוצרה מהתבנית: breakout) ----------
+// שובר לבנים: מזיזים מחבט, מקפיצים כדור ושוברים את כל הלבנים. בונוסים נופלים מלבנים שבורות.
+// וריאציות (S.variant):
+//   classic - שלבים עם תבניות לבנים, חלק מהלבנים צריכות שתי פגיעות
+//   moving  - הלבנים יורדות לאט; אם הן מגיעות למחבט המשחק נגמר
+//   tough   - לבנים עם מספר פגיעות, ולבני מתכת שאי אפשר לשבור
+const VAR = S.variant || 'classic';
+const COLS = ['#ff5d73', '#ffb02e', '#ffe14d', '#4cd97b', '#3ec9ff', '#b77bff'];
+const POWERS = [
+  { id: 'wide', e: '↔️', w: 4 }, { id: 'multi', e: '✨', w: 3 }, { id: 'slow', e: '🐢', w: 3 }, { id: 'life', e: '❤️', w: 1 },
+];
+let pad, balls, bricks, drops, level, lives, launched, t, wideT, slowT, cols, bw, bh, topY, padY, lastX;
+
+function speed() { return S.ballSpeed * (1 + (level - 1) * 0.06) * (slowT > 0 ? 0.7 : 1); }
+
+function buildLevel() {
+  cols = W < 420 ? 8 : 10;
+  bw = (W - 20) / cols; bh = Math.min(30, Math.max(20, bw * 0.48)); topY = 64;
+  const rows = Math.min(9, 4 + level);
+  const shape = (level - 1) % 4;
+  bricks = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    // תבניות שמתחלפות בין שלבים: מלא, שחמט, פירמידה, מסגרת
+    if (shape === 1 && (r + c) % 2) continue;
+    if (shape === 2 && Math.abs(c - (cols - 1) / 2) > rows - r + 0.5) continue;
+    if (shape === 3 && r > 0 && r < rows - 1 && c > 0 && c < cols - 1 && r % 2) continue;
+    let hp = 1;
+    if (VAR === 'classic' && level >= 2 && r < 2) hp = 2;
+    if (VAR === 'tough') hp = 1 + Math.floor((rows - r) / 3) + Math.floor(level / 3);
+    const steel = VAR === 'tough' && level >= 2 && r === rows - 1 && c % 3 === 1;
+    bricks.push({ x: 10 + c * bw, y: topY + r * bh, w: bw, h: bh, hp: steel ? Infinity : hp, max: hp, steel, color: COLS[r % COLS.length], e: T.gems[r % T.gems.length] });
+  }
+  drops = [];
+  resetBall();
+}
+function resetBall() {
+  launched = false;
+  balls = [{ x: pad.x, y: padY - 14, vx: 0, vy: 0, r: 8, trail: [] }];
+}
+function launch() {
+  if (launched) return;
+  launched = true;
+  const a = rand(-0.35, 0.35), sp = speed();
+  balls[0].vx = Math.sin(a) * sp; balls[0].vy = -Math.cos(a) * sp;
+  beep(520, 0.06, 'triangle');
+}
+function breakable() { return bricks.filter(b => !b.steel).length; }
+
+function hitBrick(b, i) {
+  if (b.steel) { beep(900, 0.03, 'square', 0.02); return; }
+  b.hp--;
+  if (b.hp > 0) { beep(380, 0.04, 'square', 0.03); return; }
+  bricks.splice(i, 1);
+  const pts = 10 * level * b.max; G.score += pts;
+  burst(b.x + b.w / 2, b.y + b.h / 2, b.color, 10, 160);
+  beep(500 + Math.random() * 300, 0.05, 'triangle', 0.035);
+  if (Math.random() < 0.13) {
+    const tot = POWERS.reduce((a, p) => a + p.w, 0); let r = Math.random() * tot, pw = POWERS[0];
+    for (const p of POWERS) { r -= p.w; if (r <= 0) { pw = p; break; } }
+    drops.push({ x: b.x + b.w / 2, y: b.y + b.h / 2, p: pw });
+  }
+  if (!breakable()) {
+    const bonus = 100 * level + lives * 50; G.score += bonus;
+    floatText(W / 2, H / 2, `שלב ${level} הושלם! +${bonus}`, P.accent, 28);
+    beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
+    level++; buildLevel();
+  }
+}
+
+function power(p) {
+  floatText(pad.x, padY - 30, p.e, P.accent, 26); beep(1000, 0.1, 'sine', 0.04);
+  if (p.id === 'wide') wideT = 12;
+  if (p.id === 'slow') slowT = 8;
+  if (p.id === 'life') lives = Math.min(5, lives + 1);
+  if (p.id === 'multi') {
+    const extra = [];
+    for (const b of balls.slice(0, 4)) for (const a of [-0.5, 0.5]) {
+      const sp = Math.hypot(b.vx, b.vy) || speed(), ang = Math.atan2(b.vx, -b.vy) + a;
+      extra.push({ x: b.x, y: b.y, vx: Math.sin(ang) * sp, vy: -Math.cos(ang) * sp, r: b.r, trail: [] });
+    }
+    if (launched) balls.push(...extra);
+  }
+}
+
+function step(dt) {
+  const pw = pad.w * (wideT > 0 ? 1.5 : 1);
+  for (let k = balls.length - 1; k >= 0; k--) {
+    const b = balls[k];
+    if (!launched) { b.x = pad.x; b.y = padY - 14; continue; }
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
+    if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
+    if (b.y < 52 + b.r) { b.y = 52 + b.r; b.vy = Math.abs(b.vy); }
+    // מחבט: זווית היציאה תלויה במקום הפגיעה
+    if (b.vy > 0 && b.y + b.r >= padY - 7 && b.y - b.r <= padY + 7 && Math.abs(b.x - pad.x) <= pw / 2 + b.r) {
+      const off = clamp((b.x - pad.x) / (pw / 2), -1, 1), ang = off * 1.05, sp = speed();
+      b.vx = Math.sin(ang) * sp; b.vy = -Math.cos(ang) * sp; b.y = padY - 7 - b.r;
+      beep(300, 0.04, 'triangle', 0.03);
+    }
+    // לבנים: מוצאים את הלבנה החופפת ומחזירים לפי צד החדירה הקטן
+    for (let i = bricks.length - 1; i >= 0; i--) {
+      const r = bricks[i];
+      const nx = clamp(b.x, r.x, r.x + r.w), ny = clamp(b.y, r.y, r.y + r.h);
+      if ((b.x - nx) ** 2 + (b.y - ny) ** 2 > b.r * b.r) continue;
+      const ox = Math.min(b.x + b.r - r.x, r.x + r.w - (b.x - b.r)), oy = Math.min(b.y + b.r - r.y, r.y + r.h - (b.y - b.r));
+      if (ox < oy) { b.vx = b.x < r.x + r.w / 2 ? -Math.abs(b.vx) : Math.abs(b.vx); }
+      else { b.vy = b.y < r.y + r.h / 2 ? -Math.abs(b.vy) : Math.abs(b.vy); }
+      hitBrick(r, i);
+      break;
+    }
+    if (b.y - b.r > H) balls.splice(k, 1);
+  }
+}
+
+const game = {
+  resize() { padY = H - Math.max(70, H * 0.1); if (pad) pad.y = padY; },
+  reset() {
+    padY = H - Math.max(70, H * 0.1);
+    pad = { x: W / 2, w: Math.min(W * 0.3, S.padW) };
+    level = 1; lives = 3; t = 0; wideT = 0; slowT = 0; lastX = null;
+    buildLevel();
+  },
+  down(x) { pad.x = clamp(x, 0, W); lastX = x; launch(); },
+  move(x) { pad.x = clamp(x, 0, W); },
+  key(code) { if (code === 'Space' || code === 'ArrowUp') launch(); },
+  update(dt) {
+    t += dt; wideT -= dt; slowT -= dt;
+    if (keys.has('ArrowLeft') || keys.has('KeyA')) pad.x -= 720 * dt;
+    if (keys.has('ArrowRight') || keys.has('KeyD')) pad.x += 720 * dt;
+    pad.x = clamp(pad.x, 0, W);
+    // צעדים קטנים כדי שכדור מהיר לא יעבור דרך לבנים
+    const n = Math.ceil(dt * speed() / 5);
+    for (let s = 0; s < n; s++) step(dt / n);
+    for (const b of balls) { b.trail.push([b.x, b.y]); if (b.trail.length > 6) b.trail.shift(); }
+    if (!balls.length) {
+      lives--; beep(150, 0.3, 'sawtooth', 0.05);
+      if (lives <= 0) { gameOver(G.score, `הגעת לשלב ${level}`); return; }
+      floatText(W / 2, H / 2, 'נשארו ' + lives + ' ❤️', P.danger, 26); resetBall();
+    }
+    const pw = pad.w * (wideT > 0 ? 1.5 : 1);
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i]; d.y += 170 * dt;
+      if (d.y > padY - 12 && d.y < padY + 16 && Math.abs(d.x - pad.x) < pw / 2 + 14) { power(d.p); drops.splice(i, 1); }
+      else if (d.y > H + 20) drops.splice(i, 1);
+    }
+    if (VAR === 'moving' && launched) {
+      for (const b of bricks) b.y += S.descend * (1 + level * 0.08) * dt;
+      if (bricks.some(b => !b.steel && b.y + b.h > padY - 24)) { gameOver(G.score, `הלבנים הגיעו אליך · שלב ${level}`); return; }
+    }
+  },
+  draw() {
+    ctx.fillStyle = P.bg; ctx.fillRect(0, 0, W, H);
+    if (!pad) return;
+    ctx.fillStyle = P.grid + '55';
+    for (let x = 0; x < W; x += 40) ctx.fillRect(x, 0, 1, H);
+    for (const b of bricks) {
+      const m = 2;
+      if (b.steel) { ctx.fillStyle = '#8a93a6'; roundRect(b.x + m, b.y + m, b.w - 2 * m, b.h - 2 * m, 5); ctx.fill(); ctx.strokeStyle = '#d5dbe6'; ctx.lineWidth = 2; ctx.stroke(); continue; }
+      const fade = b.max > 1 ? 0.45 + 0.55 * (b.hp / b.max) : 1;
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = b.color; roundRect(b.x + m, b.y + m, b.w - 2 * m, b.h - 2 * m, 6); ctx.fill();
+      ctx.fillStyle = '#ffffff44'; roundRect(b.x + m + 2, b.y + m + 2, b.w - 2 * m - 4, (b.h - 2 * m) * 0.35, 4); ctx.fill();
+      ctx.globalAlpha = 1;
+      if (b.w > 34) drawEmoji(b.e, b.x + b.w / 2, b.y + b.h / 2, b.h * 0.62);
+      if (b.hp > 1) {
+        ctx.fillStyle = '#000'; ctx.font = `900 ${b.h * 0.45}px system-ui`; ctx.textAlign = 'center';
+        ctx.fillText(b.hp, b.x + b.w - 9, b.y + b.h * 0.45);
+      }
+    }
+    for (const d of drops) {
+      ctx.fillStyle = P.bg2; ctx.beginPath(); ctx.arc(d.x, d.y, 15, 0, 7); ctx.fill();
+      ctx.strokeStyle = P.accent; ctx.lineWidth = 2; ctx.stroke();
+      drawEmoji(d.p.e, d.x, d.y, 18);
+    }
+    const pw = pad.w * (wideT > 0 ? 1.5 : 1);
+    ctx.shadowColor = P.accent; ctx.shadowBlur = 14;
+    ctx.fillStyle = P.accent; roundRect(pad.x - pw / 2, padY - 7, pw, 14, 7); ctx.fill();
+    ctx.shadowBlur = 0;
+    for (const b of balls) {
+      b.trail.forEach(([x, y], i) => { ctx.globalAlpha = i / 12; ctx.fillStyle = P.accent; ctx.beginPath(); ctx.arc(x, y, b.r * 0.8, 0, 7); ctx.fill(); });
+      ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill();
+    }
+    if (!launched && G.state === 'play') {
+      ctx.fillStyle = P.fg; ctx.font = '800 18px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('לחץ כדי לשגר', W / 2, padY - 60);
+    }
+    drawFx();
+    const fx2 = (wideT > 0 ? ' ↔️' : '') + (slowT > 0 ? ' 🐢' : '');
+    hud(`${'❤️'.repeat(Math.max(0, lives))}`, `שלב ${level} · ⭐ ${fmt(G.score)}${fx2}`);
+  },
+};
+
+</script>
+<script>
+"use strict";
+window.addEventListener('resize', fit);
+fit();
+if (game.init) game.init();
+if (game.autostart) { G.state = 'play'; game.reset(); } else menu();
+booted = true;
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.state === 'play') game.update(dt);
+  updFx(G.state === 'pause' ? 0 : dt);
+  game.draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -7,6 +7,22 @@ export const TRENDS_UPDATED = '2026-11';
 
 export const GENRES = [
   {
+    id: 'invaders',
+    name: 'יריות מול פולשים',
+    template: 'invaders',
+    score: 76,
+    why: 'קלאסיקת ארקייד: חללית שיורה לבד מול מערך אויבים שיורד ויורה בחזרה. שליטה בגרירה אחת, מתאים לנייד.',
+    tags: ['arcade', 'shooter'],
+  },
+  {
+    id: 'breakout',
+    name: 'שובר לבנים',
+    template: 'breakout',
+    score: 74,
+    why: 'מחבט, כדור ולבנים: ז\'אנר ותיק שממשיך להופיע בטבלאות במשחקי בלוקים וכדורים. ברור מהשנייה הראשונה.',
+    tags: ['arcade', 'casual'],
+  },
+  {
     id: 'match3',
     name: 'התאמת שלוש',
     template: 'match3',

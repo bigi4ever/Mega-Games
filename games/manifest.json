@@ -397,32 +397,6 @@
     "thumb": "thumb.jpg"
   },
   {
-    "slug": "arrows-spooky-f30501",
-    "seed": "variants-arrows",
-    "title": "המצפן",
-    "icon": "➡️",
-    "genre": "arrows",
-    "genreName": "פאזל חצים",
-    "template": "arrows",
-    "theme": "spooky",
-    "themeName": "מפחיד",
-    "difficulty": "normal",
-    "difficultyName": "רגיל",
-    "howto": "לחץ על חץ פנוי כדי להוציא אותו. לחיצה על חץ חסום מסובבת אותו ברבע סיבוב. יש מספר מהלכים מוגבל לכל שלב, אז תכנן את הסיבובים.",
-    "variant": "rotate",
-    "variantName": "סיבוב חצים",
-    "params": {
-      "startSize": 4,
-      "maxSize": 9,
-      "density": 0.69,
-      "hearts": 3,
-      "variant": "rotate"
-    },
-    "reason": "נבחר ידנית",
-    "created": "2026-11-21T15:05:05.721Z",
-    "thumb": "thumb.jpg"
-  },
-  {
     "slug": "idle-robots-5a80a9",
     "seed": "variants-idle",
     "title": "מכרה הסוללות",
@@ -467,6 +441,57 @@
     },
     "reason": "פאזל בלוקים: פופולריות 95/100 (ציון בסיס), נוצרו כבר 4, סיכוי בחירה 6%. הנחת צורות על לוח 8×8 וניקוי שורות. נמצא דרך קבע בטופ ההורדות, לכל הגילאים.",
     "created": "2026-11-21T15:44:15.447Z",
+    "thumb": "thumb.jpg"
+  },
+  {
+    "slug": "breakout-jungle-08de27",
+    "seed": "first-breakout",
+    "title": "לבנים בג'ונגל",
+    "icon": "🧱",
+    "genre": "breakout",
+    "genreName": "שובר לבנים",
+    "template": "breakout",
+    "theme": "jungle",
+    "themeName": "ג'ונגל",
+    "difficulty": "easy",
+    "difficultyName": "קל",
+    "howto": "גרור את האצבע (או השתמש בחיצים) כדי להזיז את המחבט, ולחץ כדי לשגר את הכדור. שבור את כל הלבנים כדי לעבור שלב, ותפוס בונוסים שנופלים: ↔️ מחבט רחב, ✨ עוד כדורים, 🐢 האטה.",
+    "variant": "classic",
+    "variantName": "קלאסי",
+    "params": {
+      "ballSpeed": 326.4912,
+      "padW": 126,
+      "descend": 4.1574,
+      "variant": "classic"
+    },
+    "reason": "נבחר ידנית",
+    "created": "2026-11-21T15:57:50.497Z",
+    "thumb": "thumb.jpg"
+  },
+  {
+    "slug": "invaders-space-a0a9e2",
+    "seed": "first-invaders-space",
+    "title": "הפלישה לחלל",
+    "icon": "🚀",
+    "genre": "invaders",
+    "genreName": "יריות מול פולשים",
+    "template": "invaders",
+    "theme": "space",
+    "themeName": "חלל",
+    "difficulty": "normal",
+    "difficultyName": "רגיל",
+    "howto": "🚀 יורה לבד: גרור ימינה ושמאלה (או השתמש בחיצים) כדי לכוון. חסל את כל 👾🛸☄️ לפני שהם נוחתים, והתחבא מאחורי המחסות. פגיעה ב-⭐ שחוצה למעלה נותנת ירי משולש.",
+    "variant": "classic",
+    "variantName": "קלאסי",
+    "params": {
+      "speed": 46.73,
+      "reload": 0.4,
+      "enemyFire": 1.16,
+      "diveEvery": 2.63,
+      "variant": "classic"
+    },
+    "reason": "נבחר ידנית",
+    "created": "2026-11-21T15:58:03.147Z",
     "thumb": "thumb.jpg"
   }
 ]

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>המצפן</title>
+<title>הפלישה לחלל</title>
 <style>
   :root { --bg:#111; --bg2:#222; --fg:#fff; --accent:#fc3; --danger:#f44; --grid:#333; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); overflow:hidden;
@@ -46,7 +46,7 @@
 <div id="hud"><span class="hr"><a id="home" href="../../index.html" aria-label="חזרה לכל המשחקים" title="לכל המשחקים">🏠</a><span id="hudR"></span></span><span id="hudL"></span></div>
 <div id="app"></div>
 <div id="ov" class="hidden"><div class="card" id="card"></div></div>
-<script type="application/json" id="cfg">{"slug":"arrows-spooky-f30501","title":"המצפן","icon":"➡️","howto":"לחץ על חץ פנוי כדי להוציא אותו. לחיצה על חץ חסום מסובבת אותו ברבע סיבוב. יש מספר מהלכים מוגבל לכל שלב, אז תכנן את הסיבובים.","genreName":"פאזל חצים · סיבוב חצים","theme":{"id":"spooky","name":"מפחיד","palette":{"bg":"#140b1f","bg2":"#22122f","fg":"#f3e9ff","accent":"#ff9a1f","danger":"#9dff4d","grid":"#2e1a40"},"hero":"🎃","enemies":["👻","🦇","💀","🧟"],"boss":"🧛","pickup":"🍬","obstacle":["🪦","🕸️"],"tiers":["🕯️","🦴","💀","🕸️","🦇","👻","🎃","🧙","🧛","🌕"],"gems":["🎃","👻","💀","🦇","🕷️","🍬"],"currency":"👻","clickable":"🎃","buildings":[["🕯️","נר קסום"],["🦇","עטלף"],["🧹","מטאטא"],["🧙","מכשפה"],["🏚️","בית רדוף"],["🌕","ירח מלא"]],"words":{"place":"בית הקברות","hero":"הדלעת","thing":"הרוחות","adj":"אפל"}},"params":{"startSize":4,"maxSize":9,"density":0.69,"hearts":3,"variant":"rotate"}}</script>
+<script type="application/json" id="cfg">{"slug":"invaders-space-a0a9e2","title":"הפלישה לחלל","icon":"🚀","howto":"🚀 יורה לבד: גרור ימינה ושמאלה (או השתמש בחיצים) כדי לכוון. חסל את כל 👾🛸☄️ לפני שהם נוחתים, והתחבא מאחורי המחסות. פגיעה ב-⭐ שחוצה למעלה נותנת ירי משולש.","genreName":"יריות מול פולשים","theme":{"id":"space","name":"חלל","palette":{"bg":"#0b1026","bg2":"#151c3d","fg":"#e8ecff","accent":"#ffcc33","danger":"#ff4d6d","grid":"#1f2a55"},"hero":"🚀","enemies":["👾","🛸","☄️","👽"],"boss":"🪐","pickup":"⭐","obstacle":["☄️","🛰️"],"tiers":["🪨","☄️","🌑","🌙","⭐","🌍","🪐","☀️","🌌","✨"],"gems":["🌍","🪐","⭐","🌙","☄️","👾"],"currency":"💎","clickable":"🪐","buildings":[["🛰️","לוויין"],["🛸","ספינת כרייה"],["🤖","רובוט כורה"],["🌙","בסיס ירחי"],["🪐","מושבה"],["🌌","גלקסיה"]],"words":{"place":"החלל","hero":"הטייס","thing":"הכוכבים","adj":"קוסמי"}},"params":{"speed":46.73,"reload":0.4,"enemyFire":1.16,"diveEvery":2.63,"variant":"classic"}}</script>
 <script>
 "use strict";
 // ---------- זמן ריצה משותף לכל המשחקים ----------
@@ -254,174 +254,221 @@ window.addEventListener('keyup', e => keys.delete(e.code));
 </script>
 <script>
 "use strict";
-// ---------- לוגיקת המשחק (נוצרה מהתבנית: arrows) ----------
-// פאזל חצים: לוחצים על חץ, והוא מחליק החוצה מהלוח בכיוון שלו, אם הדרך פנויה.
-// חץ שנתקע בחץ אחר עולה בלב. מנקים את כל החצים כדי לעבור שלב.
-//
-// כל לוח פתיר בוודאות: הוא נבנה בסדר הפוך לסדר הפתרון. כל חץ חדש מונח רק אם הקרן שלו
-// עד הקצה פנויה מכל החצים שכבר הונחו. החצים שהונחו קודם יוצאים אחריו, אז מסלולם
-// יכול לעבור דרכו (הוא כבר לא יהיה שם). לכן הפתרון הוא להוציא בסדר הפוך להנחה.
-const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // ימינה, למטה, שמאלה, למעלה
-let N, board, level, hearts, bx, by, cs, flying, shake, hint, cleared;
-// וריאציות: 'rotate' = לחיצה על חץ חסום מסובבת אותו, מהלכים מוגבלים; 'timed' = שעון לכל שלב
+// ---------- לוגיקת המשחק (נוצרה מהתבנית: invaders) ----------
+// יריות מול מערך פולשים: החללית יורה לבד, מזיזים אותה ימינה ושמאלה, ומחסלים מערך אויבים שיורד ויורה בחזרה.
+// וריאציות (S.variant):
+//   classic - המערך זז מצד לצד ויורד שורה בכל פעם שהוא מגיע לקצה; יש מחסות שנשחקות
+//   dive    - המערך מתנדנד למעלה, ואויבים צוללים לעברך במסלולים מעוגלים
+//   boss    - בכל שלב שלישי מגיע בוס ענק עם פס חיים ויריות מפוצלות
 const VAR = S.variant || 'classic';
-let movesLeft = 0, timeLeft = 0, spin = {};
+let ship, shots, eshots, foes, shields, level, lives, dir, t, fireT, boss, ufo, ufoT, triple, cell, gx, gy, inv;
 
-function rayLen(g, n, i, d) {
-  // אורך הקרן עד הקצה, או -1 אם יש חוסם
-  let x = i % n + DIRS[d][0], y = ((i / n) | 0) + DIRS[d][1], len = 0;
-  while (x >= 0 && y >= 0 && x < n && y < n) {
-    if (g[y * n + x] !== -1) return -1;
-    x += DIRS[d][0]; y += DIRS[d][1]; len++;
+function isBossLevel() { return VAR === 'boss' && level % 3 === 0; }
+
+function buildLevel() {
+  shots = []; eshots = []; boss = null; ufo = null; ufoT = rand(8, 14);
+  const cols = W < 420 ? 7 : 9, rows = isBossLevel() ? 2 : Math.min(5, 3 + Math.floor((level + 1) / 2));
+  cell = Math.min(54, (W - 40) / (cols + 1.5));
+  gx = (W - cols * cell) / 2; gy = 76 + Math.min(level - 1, 4) * cell * 0.25; dir = 1;
+  foes = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const tier = Math.max(0, Math.min(T.enemies.length - 1, rows - 1 - r));
+    foes.push({ c, r, ox: c * cell, oy: r * cell * 0.9, e: T.enemies[tier], hp: 1 + (tier >= 2 && level >= 3 ? 1 : 0), pts: (tier + 1) * 10, dive: null, x: 0, y: 0 });
   }
-  return len;
-}
-function blocker(i) {
-  let x = i % N + DIRS[board[i]][0], y = ((i / N) | 0) + DIRS[board[i]][1];
-  while (x >= 0 && y >= 0 && x < N && y < N) {
-    if (board[y * N + x] !== -1) return y * N + x;
-    x += DIRS[board[i]][0]; y += DIRS[board[i]][1];
-  }
-  return -1;
-}
-function generate(n, density) {
-  const g = new Array(n * n).fill(-1), want = Math.floor(n * n * density);
-  let placed = 0;
-  for (let tries = 0; placed < want && tries < 4000; tries++) {
-    const i = randi(0, n * n - 1);
-    if (g[i] !== -1) continue;
-    // מעדיפים את הכיוון עם הקרן הארוכה ביותר: חצים שיוצאים מאוחר יותר יעברו דרכה, וזה יוצר תלויות
-    let best = -1, bl = -1;
-    for (const d of [0, 1, 2, 3].sort(() => Math.random() - 0.5)) {
-      const l = rayLen(g, n, i, d);
-      if (l > bl) { bl = l; best = d; }
+  if (isBossLevel()) boss = { x: W / 2, y: 120, hp: 40 + level * 8, max: 40 + level * 8, vx: 90, fireT: 1.5, hit: 0 };
+  shields = [];
+  if (VAR !== 'dive') {
+    // מחסות: גושים קטנים שנשחקים מפגיעות (גם של האויבים וגם שלך)
+    const n = W < 420 ? 3 : 4, bw = 9, by = ship.y - 90;
+    for (let k = 0; k < n; k++) {
+      const cx = W * (k + 1) / (n + 1);
+      for (let i = -3; i <= 3; i++) for (let j = 0; j < 3; j++) {
+        if (j === 2 && Math.abs(i) < 2) continue;
+        shields.push({ x: cx + i * bw, y: by + j * bw, s: bw, hp: 2 });
+      }
     }
-    if (best >= 0 && bl >= 0) { g[i] = best; placed++; }
   }
-  return g;
 }
 
-function newLevel() {
-  N = Math.min(S.maxSize, S.startSize + Math.floor((level - 1) / 2));
-  board = generate(N, Math.min(0.92, S.density + level * 0.02));
-  flying = []; shake = null; hint = null; hearts = S.hearts; spin = {};
-  const count = board.filter(v => v !== -1).length;
-  if (VAR === 'rotate') {
-    // מערבבים חלק מהחצים. כל סיבוב שצריך כדי להחזיר אותם נכנס למכסת המהלכים, כך שהשלב תמיד פתיר
-    let extra = 0;
-    for (let i = 0; i < N * N; i++) {
-      if (board[i] !== -1 && Math.random() < 0.4) { const r = randi(1, 3); board[i] = (board[i] + r) % 4; extra += 4 - r; }
+function foePos(f) {
+  if (f.dive) return [f.x, f.y];
+  if (VAR === 'dive') return [gx + f.ox + Math.sin(t * 1.2) * 30, gy + f.oy];
+  return [gx + f.ox, gy + f.oy];
+}
+
+function playerHit() {
+  if (ship.inv > 0) return;
+  lives--; ship.inv = 1.6; burst(ship.x, ship.y, P.danger, 30, 240); beep(110, 0.35, 'sawtooth', 0.06);
+  if (lives <= 0) gameOver(G.score, `הגעת לשלב ${level}`);
+}
+
+function killFoe(f, i) {
+  foes.splice(i, 1);
+  const [x, y] = foePos(f);
+  G.score += f.pts * level; burst(x, y, P.danger, 12, 170);
+  beep(220 + Math.random() * 120, 0.08, 'square', 0.04);
+}
+
+function hitShield(x, y) {
+  for (let i = shields.length - 1; i >= 0; i--) {
+    const s = shields[i];
+    if (Math.abs(x - s.x) < s.s / 2 + 2 && Math.abs(y - s.y) < s.s / 2 + 4) {
+      if (--s.hp <= 0) shields.splice(i, 1);
+      return true;
     }
-    movesLeft = count + extra;
   }
-  if (VAR === 'timed') timeLeft = Math.ceil(count * S.secPerArrow) + 5;
-  game.resize();
+  return false;
 }
 
-function remaining() { return board.filter(v => v !== -1).length; }
-function hintBtn() { return { x: W / 2 - 70, y: by + cs * N + 22, w: 140, h: 44 }; }
+function levelClear() {
+  const bonus = 150 * level; G.score += bonus;
+  floatText(W / 2, H / 2, `שלב ${level} הושלם! +${bonus}`, P.accent, 28);
+  beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
+  level++; buildLevel();
+  if (isBossLevel()) floatText(W / 2, H / 2 + 40, '⚠️ בוס!', P.danger, 30);
+}
 
 const game = {
-  resize() {
-    if (!N) return;
-    const size = Math.min(W * 0.94, H * 0.66, 600);
-    cs = size / N; bx = (W - size) / 2; by = Math.max(64, (H - size) / 2 - 20);
+  resize() { if (ship) ship.y = H - Math.max(80, H * 0.11); },
+  reset() {
+    ship = { x: W / 2, y: H - Math.max(80, H * 0.11), inv: 0 };
+    level = 1; lives = 3; t = 0; fireT = 0; triple = 0; inv = 0;
+    buildLevel();
   },
-  reset() { level = 1; cleared = 0; newLevel(); },
-  down(x, y) {
-    const hb = hintBtn();
-    if (x > hb.x && x < hb.x + hb.w && y > hb.y && y < hb.y + hb.h) {
-      const free = board.map((d, i) => (d !== -1 && blocker(i) === -1 ? i : -1)).filter(i => i >= 0);
-      if (free.length) { hint = { i: pick(free), t: 1.6 }; G.score = Math.max(0, G.score - 15); beep(600, 0.08, 'sine'); }
-      return;
-    }
-    const cx = Math.floor((x - bx) / cs), cy = Math.floor((y - by) / cs);
-    if (cx < 0 || cy < 0 || cx >= N || cy >= N) return;
-    const i = cy * N + cx, d = board[i];
-    if (d === -1) return;
-    const b = blocker(i);
-    if (b === -1) {
-      board[i] = -1; cleared++;
-      if (VAR === 'rotate') movesLeft--;
-      flying.push({ x: bx + (cx + 0.5) * cs, y: by + (cy + 0.5) * cs, d, v: 300, life: 1 });
-      G.score += 10; if (hint && hint.i === i) hint = null;
-      beep(520 + Math.random() * 200, 0.06, 'triangle');
-      if (!remaining()) {
-        const bonus = 50 * level + (VAR === 'rotate' ? movesLeft * 10 : VAR === 'timed' ? Math.ceil(timeLeft) * 10 : hearts * 25);
-        G.score += bonus;
-        floatText(W / 2, by + cs * N / 2, `שלב ${level} הושלם! +${bonus}`, P.accent, 28);
-        beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
-        level++;
-        setTimeout(() => { if (G.state === 'play') newLevel(); }, 900);
-      }
-      else if (VAR === 'rotate' && movesLeft <= 0) gameOver(G.score, `נגמרו המהלכים · הגעת לשלב ${level}`);
-    } else if (VAR === 'rotate') {
-      board[i] = (d + 1) % 4; spin[i] = 1;
-      beep(380, 0.06, 'sine', 0.03);
-      if (--movesLeft <= 0) gameOver(G.score, `נגמרו המהלכים · הגעת לשלב ${level}`);
-    } else {
-      // החץ מתקדם עד החוסם וחוזר
-      const dist = Math.max(Math.abs((b % N) - cx), Math.abs(((b / N) | 0) - cy)) - 1;
-      shake = { i, d, dist: dist * cs + cs * 0.25, t: 0, blk: b };
-      beep(140, 0.18, 'sawtooth', 0.05);
-      if (VAR === 'timed') { timeLeft -= 3; floatText(bx + (cx + 0.5) * cs, by + (cy + 0.5) * cs, '-3 ⏱', P.danger, 20); }
-      else if (--hearts <= 0) gameOver(G.score, `הגעת לשלב ${level} וניקית ${cleared} חצים`);
-    }
-  },
+  down(x) { ship.x = clamp(x, 24, W - 24); },
+  move(x) { ship.x = clamp(x, 24, W - 24); },
   update(dt) {
-    if (VAR === 'timed' && remaining()) {
-      timeLeft -= dt;
-      if (timeLeft <= 0) { gameOver(G.score, `הזמן נגמר · הגעת לשלב ${level} וניקית ${cleared} חצים`); return; }
+    t += dt; ship.inv -= dt; triple -= dt;
+    if (keys.has('ArrowLeft') || keys.has('KeyA')) ship.x -= 420 * dt;
+    if (keys.has('ArrowRight') || keys.has('KeyD')) ship.x += 420 * dt;
+    ship.x = clamp(ship.x, 24, W - 24);
+
+    // ירי אוטומטי
+    fireT -= dt;
+    if (fireT <= 0) {
+      fireT = S.reload;
+      const spread = triple > 0 ? [-0.18, 0, 0.18] : [0];
+      for (const a of spread) shots.push({ x: ship.x, y: ship.y - 22, vx: Math.sin(a) * 620, vy: -Math.cos(a) * 620 });
+      beep(880, 0.03, 'square', 0.012);
     }
-    for (const k in spin) { spin[k] -= dt * 6; if (spin[k] <= 0) delete spin[k]; }
-    for (const f of flying) { f.v += 2600 * dt; f.x += DIRS[f.d][0] * f.v * dt; f.y += DIRS[f.d][1] * f.v * dt; f.life -= dt * 1.5; }
-    flying = flying.filter(f => f.life > 0);
-    if (shake) { shake.t += dt * 3; if (shake.t >= 1) shake = null; }
-    if (hint) { hint.t -= dt; if (hint.t <= 0) hint = null; }
+
+    // תנועת המערך
+    const alive = foes.filter(f => !f.dive).length, total = Math.max(1, alive + foes.filter(f => f.dive).length);
+    if (VAR !== 'dive') {
+      const sp = S.speed * (1 + (level - 1) * 0.12) * (1 + (1 - foes.length / Math.max(1, foes.length + 1)) * 0.2) * (foes.length < 6 ? 1.8 : 1);
+      gx += dir * sp * dt;
+      const xs = foes.map(f => gx + f.ox);
+      if (xs.length && (Math.min(...xs) < 20 || Math.max(...xs) > W - 20)) {
+        dir *= -1; gx += dir * sp * dt * 2; gy += cell * 0.45; beep(90, 0.06, 'square', 0.03);
+      }
+    } else if (foes.length) {
+      // צוללים: כל כמה שניות אויב יוצא מהמערך ומסתער במסלול מעוגל
+      inv -= dt;
+      if (inv <= 0) {
+        const pool = foes.filter(f => !f.dive);
+        if (pool.length) {
+          const f = pick(pool), [x, y] = foePos(f);
+          f.dive = { t: 0, sx: x, sy: y, tx: ship.x, side: x < W / 2 ? 1 : -1 }; f.x = x; f.y = y;
+          beep(300, 0.2, 'sawtooth', 0.025);
+        }
+        inv = Math.max(0.6, S.diveEvery - level * 0.15);
+      }
+      for (const f of foes) {
+        if (!f.dive) continue;
+        const d = f.dive; d.t += dt * (0.55 + level * 0.04);
+        const k = d.t;
+        f.x = d.sx + Math.sin(k * Math.PI) * 120 * d.side + (d.tx - d.sx) * Math.min(1, k);
+        f.y = d.sy + k * (H - d.sy + 60);
+        if (Math.random() < dt * 0.9) eshots.push({ x: f.x, y: f.y + 16, vx: 0, vy: 280 });
+        if (f.y > H + 40) { f.dive = null; } // חוזר לעמדה במערך
+        else if (dist(f.x, f.y, ship.x, ship.y) < cell * 0.55) { playerHit(); f.dive = null; }
+      }
+    }
+
+    // ירי האויבים: מהאויב התחתון בעמודה אקראית
+    if (foes.length && Math.random() < dt * S.enemyFire * (1 + level * 0.15)) {
+      const cols = [...new Set(foes.filter(f => !f.dive).map(f => f.c))];
+      if (cols.length) {
+        const c = pick(cols), f = foes.filter(x => x.c === c && !x.dive).sort((a, b) => b.r - a.r)[0], [x, y] = foePos(f);
+        eshots.push({ x, y: y + 16, vx: 0, vy: 260 + level * 12 });
+      }
+    }
+
+    if (boss) {
+      boss.x += boss.vx * dt; if (boss.x < 80 || boss.x > W - 80) boss.vx *= -1;
+      boss.hit -= dt; boss.fireT -= dt;
+      if (boss.fireT <= 0) {
+        boss.fireT = Math.max(0.7, 1.6 - level * 0.05);
+        for (const a of [-0.5, -0.25, 0, 0.25, 0.5]) eshots.push({ x: boss.x, y: boss.y + 40, vx: Math.sin(a) * 240, vy: Math.cos(a) * 240 });
+        beep(140, 0.15, 'sawtooth', 0.04);
+      }
+    }
+
+    // צלחת בונוס שחוצה את המסך: פגיעה בה נותנת ירי משולש
+    ufoT -= dt;
+    if (!ufo && ufoT <= 0) { ufo = { x: -30, y: 58, vx: 150 }; }
+    if (ufo) { ufo.x += ufo.vx * dt; if (ufo.x > W + 40) { ufo = null; ufoT = rand(10, 18); } }
+
+    // קליעים שלך
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const s = shots[i]; s.x += s.vx * dt; s.y += s.vy * dt;
+      let gone = s.y < 40; // הקליעים שלך עוברים דרך המחסות; רק יריות האויבים שוחקות אותן
+      if (!gone && ufo && dist(s.x, s.y, ufo.x, ufo.y) < 22) {
+        gone = true; triple = 10; G.score += 100 * level; burst(ufo.x, ufo.y, P.accent, 25, 200);
+        floatText(ufo.x, ufo.y + 20, '🔱 ירי משולש!', P.accent, 20); beep(1200, 0.2, 'triangle', 0.05); ufo = null; ufoT = rand(12, 20);
+      }
+      if (!gone && boss && Math.abs(s.x - boss.x) < 46 && Math.abs(s.y - boss.y) < 40) {
+        gone = true; boss.hp--; boss.hit = 0.08; beep(160, 0.03, 'square', 0.02);
+        if (boss.hp <= 0) { burst(boss.x, boss.y, P.danger, 70, 320); G.score += 1000 * level; boss = null; floatText(W / 2, 140, 'הבוס הובס!', P.accent, 30); }
+      }
+      for (let j = foes.length - 1; j >= 0 && !gone; j--) {
+        const f = foes[j], [x, y] = foePos(f);
+        if (Math.abs(s.x - x) < cell * 0.42 && Math.abs(s.y - y) < cell * 0.42) {
+          gone = true;
+          if (--f.hp <= 0) killFoe(f, j); else beep(500, 0.03, 'square', 0.02);
+        }
+      }
+      if (gone) shots.splice(i, 1);
+    }
+    // קליעי אויבים
+    for (let i = eshots.length - 1; i >= 0; i--) {
+      const s = eshots[i]; s.x += s.vx * dt; s.y += s.vy * dt;
+      if (s.y > H + 10 || hitShield(s.x, s.y)) { eshots.splice(i, 1); continue; }
+      if (Math.abs(s.x - ship.x) < 18 && Math.abs(s.y - ship.y) < 18) { eshots.splice(i, 1); playerHit(); if (G.state !== 'play') return; }
+    }
+    // המערך הגיע למטה
+    if (VAR !== 'dive' && foes.some(f => gy + f.oy > ship.y - 40)) { gameOver(G.score, `הפולשים נחתו · שלב ${level}`); return; }
+    if (!foes.length && !boss) levelClear();
   },
   draw() {
     ctx.fillStyle = P.bg; ctx.fillRect(0, 0, W, H);
-    if (!board) return;
-    const size = cs * N;
-    ctx.fillStyle = P.bg2; roundRect(bx - 10, by - 10, size + 20, size + 20, 18); ctx.fill();
-    for (let i = 0; i < N * N; i++) {
-      const x = bx + (i % N) * cs, y = by + ((i / N) | 0) * cs;
-      ctx.fillStyle = P.grid + '66'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.06, 0, 7); ctx.fill();
+    // כוכבים ברקע
+    ctx.fillStyle = P.fg + '55';
+    for (let i = 0; i < 60; i++) { const x = (i * 97) % W, y = ((i * 53) % H + (t || 0) * (10 + i % 5 * 8)) % H; ctx.fillRect(x, y, 2, 2); }
+    if (!ship) return;
+    for (const s of shields) { ctx.fillStyle = s.hp > 1 ? P.accent : P.accent + '88'; ctx.fillRect(s.x - s.s / 2, s.y - s.s / 2, s.s - 1, s.s - 1); }
+    for (const f of foes) {
+      const [x, y] = foePos(f);
+      const bob = Math.sin(t * 6 + f.c) * 2;
+      drawEmoji(f.e, x, y + bob, cell * 0.72, f.dive ? f.x < ship.x : false);
     }
-    const arrow = (cx, cy, d, color, alpha = 1, glow = false) => {
-      ctx.save(); ctx.globalAlpha = alpha; ctx.translate(cx, cy); ctx.rotate(d * Math.PI / 2);
-      const s = cs * 0.42;
-      if (glow) { ctx.shadowColor = P.accent; ctx.shadowBlur = 18; }
-      ctx.fillStyle = color; roundRect(-s, -s, s * 2, s * 2, s * 0.35); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = P.bg;
-      ctx.beginPath();
-      ctx.moveTo(s * 0.62, 0); ctx.lineTo(s * 0.02, -s * 0.52); ctx.lineTo(s * 0.02, -s * 0.2); ctx.lineTo(-s * 0.6, -s * 0.2);
-      ctx.lineTo(-s * 0.6, s * 0.2); ctx.lineTo(s * 0.02, s * 0.2); ctx.lineTo(s * 0.02, s * 0.52); ctx.closePath(); ctx.fill();
-      ctx.restore();
-    };
-    for (let i = 0; i < N * N; i++) {
-      if (board[i] === -1) continue;
-      let cx = bx + (i % N + 0.5) * cs, cy = by + (((i / N) | 0) + 0.5) * cs, color = P.accent;
-      if (shake && shake.i === i) {
-        const k = Math.sin(shake.t * Math.PI) * shake.dist;
-        cx += DIRS[shake.d][0] * k; cy += DIRS[shake.d][1] * k; color = P.danger;
-      }
-      if (shake && shake.blk === i) color = P.fg;
-      arrow(cx, cy, board[i] - (spin[i] || 0), color, 1, hint && hint.i === i && Math.floor(hint.t * 6) % 2 === 0);
+    if (boss) {
+      if (boss.hit > 0) { ctx.fillStyle = '#fff6'; ctx.beginPath(); ctx.arc(boss.x, boss.y, 52, 0, 7); ctx.fill(); }
+      drawEmoji(T.boss, boss.x, boss.y, 96);
+      ctx.fillStyle = '#0008'; ctx.fillRect(W * 0.15, 54, W * 0.7, 8);
+      ctx.fillStyle = P.danger; ctx.fillRect(W * 0.15, 54, W * 0.7 * boss.hp / boss.max, 8);
     }
-    for (const f of flying) arrow(f.x, f.y, f.d, P.accent, Math.max(0, f.life));
-    const hb = hintBtn();
-    ctx.fillStyle = P.bg2; roundRect(hb.x, hb.y, hb.w, hb.h, 12); ctx.fill();
-    ctx.strokeStyle = P.grid; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = P.fg; ctx.font = '800 16px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('💡 רמז (-15)', hb.x + hb.w / 2, hb.y + hb.h / 2 + 1); ctx.textBaseline = 'alphabetic';
+    if (ufo) drawEmoji(T.pickup, ufo.x, ufo.y, 30);
+    ctx.fillStyle = P.accent; ctx.shadowColor = P.accent; ctx.shadowBlur = 8;
+    for (const s of shots) ctx.fillRect(s.x - 2, s.y - 8, 4, 14);
+    ctx.shadowBlur = 0; ctx.fillStyle = P.danger;
+    for (const s of eshots) { ctx.beginPath(); ctx.arc(s.x, s.y, 4.5, 0, 7); ctx.fill(); }
+    if (!(ship.inv > 0 && Math.floor(ship.inv * 10) % 2)) {
+      ctx.save(); ctx.translate(ship.x, ship.y); ctx.rotate(-Math.PI / 4 * (T.hero === '🚀' ? 1 : 0));
+      drawEmoji(T.hero, 0, 0, 42); ctx.restore();
+    }
     drawFx();
-    const left = VAR === 'rotate' ? `👆 ${movesLeft} מהלכים`
-      : VAR === 'timed' ? `<span style="color:${timeLeft <= 5 ? P.danger : 'inherit'}">⏱ ${Math.max(0, Math.ceil(timeLeft))}</span>`
-      : `${'❤️'.repeat(Math.max(0, hearts))}<span style="opacity:.35">${'🖤'.repeat(Math.max(0, S.hearts - hearts))}</span>`;
-    hud(left,
-      `${T.pickup} שלב ${level} · נשארו ${remaining()} · ⭐ ${G.score}`);
+    hud(`${'❤️'.repeat(Math.max(0, lives))}`, `שלב ${level}${triple > 0 ? ' · 🔱' : ''} · ⭐ ${fmt(G.score)}`);
   },
 };
 

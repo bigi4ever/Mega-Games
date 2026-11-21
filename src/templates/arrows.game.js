@@ -6,9 +6,9 @@
 // יכול לעבור דרכו (הוא כבר לא יהיה שם). לכן הפתרון הוא להוציא בסדר הפוך להנחה.
 const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // ימינה, למטה, שמאלה, למעלה
 let N, board, level, hearts, bx, by, cs, flying, shake, hint, cleared;
-// וריאציות: 'rotate' = לחיצה על חץ חסום מסובבת אותו, מהלכים מוגבלים; 'timed' = שעון לכל שלב
+// וריאציה: 'timed' = שעון לכל שלב
 const VAR = S.variant || 'classic';
-let movesLeft = 0, timeLeft = 0, spin = {};
+let timeLeft = 0;
 
 function rayLen(g, n, i, d) {
   // אורך הקרן עד הקצה, או -1 אם יש חוסם
@@ -47,16 +47,8 @@ function generate(n, density) {
 function newLevel() {
   N = Math.min(S.maxSize, S.startSize + Math.floor((level - 1) / 2));
   board = generate(N, Math.min(0.92, S.density + level * 0.02));
-  flying = []; shake = null; hint = null; hearts = S.hearts; spin = {};
+  flying = []; shake = null; hint = null; hearts = S.hearts;
   const count = board.filter(v => v !== -1).length;
-  if (VAR === 'rotate') {
-    // מערבבים חלק מהחצים. כל סיבוב שצריך כדי להחזיר אותם נכנס למכסת המהלכים, כך שהשלב תמיד פתיר
-    let extra = 0;
-    for (let i = 0; i < N * N; i++) {
-      if (board[i] !== -1 && Math.random() < 0.4) { const r = randi(1, 3); board[i] = (board[i] + r) % 4; extra += 4 - r; }
-    }
-    movesLeft = count + extra;
-  }
   if (VAR === 'timed') timeLeft = Math.ceil(count * S.secPerArrow) + 5;
   game.resize();
 }
@@ -85,23 +77,17 @@ const game = {
     const b = blocker(i);
     if (b === -1) {
       board[i] = -1; cleared++;
-      if (VAR === 'rotate') movesLeft--;
       flying.push({ x: bx + (cx + 0.5) * cs, y: by + (cy + 0.5) * cs, d, v: 300, life: 1 });
       G.score += 10; if (hint && hint.i === i) hint = null;
       beep(520 + Math.random() * 200, 0.06, 'triangle');
       if (!remaining()) {
-        const bonus = 50 * level + (VAR === 'rotate' ? movesLeft * 10 : VAR === 'timed' ? Math.ceil(timeLeft) * 10 : hearts * 25);
+        const bonus = 50 * level + (VAR === 'timed' ? Math.ceil(timeLeft) * 10 : hearts * 25);
         G.score += bonus;
         floatText(W / 2, by + cs * N / 2, `שלב ${level} הושלם! +${bonus}`, P.accent, 28);
         beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
         level++;
         setTimeout(() => { if (G.state === 'play') newLevel(); }, 900);
       }
-      else if (VAR === 'rotate' && movesLeft <= 0) gameOver(G.score, `נגמרו המהלכים · הגעת לשלב ${level}`);
-    } else if (VAR === 'rotate') {
-      board[i] = (d + 1) % 4; spin[i] = 1;
-      beep(380, 0.06, 'sine', 0.03);
-      if (--movesLeft <= 0) gameOver(G.score, `נגמרו המהלכים · הגעת לשלב ${level}`);
     } else {
       // החץ מתקדם עד החוסם וחוזר
       const dist = Math.max(Math.abs((b % N) - cx), Math.abs(((b / N) | 0) - cy)) - 1;
@@ -116,7 +102,6 @@ const game = {
       timeLeft -= dt;
       if (timeLeft <= 0) { gameOver(G.score, `הזמן נגמר · הגעת לשלב ${level} וניקית ${cleared} חצים`); return; }
     }
-    for (const k in spin) { spin[k] -= dt * 6; if (spin[k] <= 0) delete spin[k]; }
     for (const f of flying) { f.v += 2600 * dt; f.x += DIRS[f.d][0] * f.v * dt; f.y += DIRS[f.d][1] * f.v * dt; f.life -= dt * 1.5; }
     flying = flying.filter(f => f.life > 0);
     if (shake) { shake.t += dt * 3; if (shake.t >= 1) shake = null; }
@@ -151,7 +136,7 @@ const game = {
         cx += DIRS[shake.d][0] * k; cy += DIRS[shake.d][1] * k; color = P.danger;
       }
       if (shake && shake.blk === i) color = P.fg;
-      arrow(cx, cy, board[i] - (spin[i] || 0), color, 1, hint && hint.i === i && Math.floor(hint.t * 6) % 2 === 0);
+      arrow(cx, cy, board[i], color, 1, hint && hint.i === i && Math.floor(hint.t * 6) % 2 === 0);
     }
     for (const f of flying) arrow(f.x, f.y, f.d, P.accent, Math.max(0, f.life));
     const hb = hintBtn();
@@ -160,8 +145,7 @@ const game = {
     ctx.fillStyle = P.fg; ctx.font = '800 16px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('💡 רמז (-15)', hb.x + hb.w / 2, hb.y + hb.h / 2 + 1); ctx.textBaseline = 'alphabetic';
     drawFx();
-    const left = VAR === 'rotate' ? `👆 ${movesLeft} מהלכים`
-      : VAR === 'timed' ? `<span style="color:${timeLeft <= 5 ? P.danger : 'inherit'}">⏱ ${Math.max(0, Math.ceil(timeLeft))}</span>`
+    const left = VAR === 'timed' ? `<span style="color:${timeLeft <= 5 ? P.danger : 'inherit'}">⏱ ${Math.max(0, Math.ceil(timeLeft))}</span>`
       : `${'❤️'.repeat(Math.max(0, hearts))}<span style="opacity:.35">${'🖤'.repeat(Math.max(0, S.hearts - hearts))}</span>`;
     hud(left,
       `${T.pickup} שלב ${level} · נשארו ${remaining()} · ⭐ ${G.score}`);

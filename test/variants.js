@@ -90,21 +90,44 @@ const CHECKS = {
     const t1 = await p.evaluate(() => timeLeft);
     return !(t0 > 20 && t1 < t0) ? 'השעון לא רץ' : null;
   },
-  'arrows/rotate': async p => {
-    const r = await p.evaluate(() => {
-      const i = board.findIndex((d, k) => d !== -1 && blocker(k) !== -1);
-      if (i < 0) return { skip: true };
-      const d0 = board[i], m0 = movesLeft;
-      game.down(bx + (i % N + 0.5) * cs, by + (((i / N) | 0) + 0.5) * cs);
-      return { rotated: board[i] === (d0 + 1) % 4, used: m0 - movesLeft, hearts };
-    });
-    return r.skip ? null : !r.rotated ? 'החץ החסום לא הסתובב' : r.used !== 1 ? 'מהלך לא ירד' : null;
-  },
   'arrows/timed': async p => {
     const t0 = await p.evaluate(() => timeLeft);
     await p.waitForTimeout(1100);
     const t1 = await p.evaluate(() => timeLeft);
     return !(t0 > 5 && t1 < t0) ? 'השעון לא רץ' : null;
+  },
+  'breakout/classic': async p => {
+    const r0 = await p.evaluate(() => ({ bricks: bricks.length, launched }));
+    await p.mouse.click(200, 600);
+    await p.waitForTimeout(2500);
+    const r1 = await p.evaluate(() => ({ bricks: bricks.length, launched, score: G.score, state: G.state }));
+    return r0.bricks < 10 ? 'אין לבנים' : !r1.launched && r1.state === 'play' ? 'הכדור לא שוגר' : null;
+  },
+  'breakout/moving': async p => {
+    const y0 = await p.evaluate(() => bricks[0].y);
+    await p.mouse.click(200, 600); await p.waitForTimeout(1500);
+    const y1 = await p.evaluate(() => bricks.length ? Math.min(...bricks.map(b => b.y)) : 999);
+    return !(y1 > y0) ? 'הלבנים לא יורדות' : null;
+  },
+  'breakout/tough': async p => {
+    const r = await p.evaluate(() => ({ multi: bricks.filter(b => !b.steel && b.max > 1).length }));
+    return r.multi < 3 ? 'אין לבנים שצריכות כמה פגיעות' : null;
+  },
+  'invaders/classic': async p => {
+    const r0 = await p.evaluate(() => ({ foes: foes.length, gx, gy, shields: shields.length }));
+    await p.waitForTimeout(2000);
+    const r1 = await p.evaluate(() => ({ foes: foes.length, gx, score: G.score }));
+    return r0.foes < 15 ? 'אין מערך' : r0.shields < 10 ? 'אין מחסות' : r1.gx === r0.gx ? 'המערך לא זז' : r1.foes >= r0.foes ? 'הירי האוטומטי לא פוגע' : null;
+  },
+  'invaders/dive': async p => {
+    await p.evaluate(() => { inv = 0; });
+    await p.waitForTimeout(400);
+    const n = await p.evaluate(() => foes.filter(f => f.dive).length);
+    return n < 1 ? 'אף אויב לא צולל' : null;
+  },
+  'invaders/boss': async p => {
+    const r = await p.evaluate(() => { level = 2; levelClear(); return { boss: !!boss, hp: boss && boss.hp, lvl: level }; });
+    return !r.boss ? 'אין בוס בשלב 3' : null;
   },
   'idle/golden': async p => {
     await p.evaluate(() => { goldIn = 0; });

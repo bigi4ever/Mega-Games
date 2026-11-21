@@ -41,6 +41,8 @@ const SHOWCASE = {
   },
   async match3(p) { await p.waitForTimeout(1300); },
   async arrows(p) { await p.waitForTimeout(500); },
+  async breakout(p) { await p.mouse.click(195, 450); await p.waitForTimeout(1600); },
+  async invaders(p) { await p.waitForTimeout(1800); },
   async idle(p) { for (let k = 0; k < 12; k++) await p.click('#tap').catch(() => {}); await p.waitForTimeout(400); },
 };
 
