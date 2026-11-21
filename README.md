@@ -19,6 +19,8 @@ git add -A && git commit -m "משחקים חדשים" && git push
 - אם מגדירים סוד `ANTHROPIC_API_KEY` (**Settings ← Secrets and variables ← Actions**), הטרנדים מתרעננים מהרשת פעם בשבוע. בלי הסוד זה עובד בחינם עם ציוני הבסיס.
 - כדי לעצור: **Actions ← Daily game ← ⋯ ← Disable workflow**.
 
+לכל משחק חדש מצולמת אוטומטית תמונה מתוך המשחק (`games/<slug>/thumb.jpg`), והיא מופיעה בכרטיס שלו בפורטל. לזה צריך Playwright. `node src/cli.js --thumbs all` מצלם מחדש את כולם.
+
 תוך דקה-שתיים אחרי ה-push, GitHub Pages מעדכן את הפורטל. דף הבית (`index.html` בשורש) נבנה מחדש אוטומטית בכל פעם שנוצר משחק, וכולל סינון לפי ז'אנר.
 
 ---
@@ -121,6 +123,7 @@ src/variants.js            וריאציות החוקים של כל ז'אנר
 src/live-trends.js         מחקר טרנדים חי עם Claude + חיפוש ברשת
 src/invent.js              ממציא מכניקות: עיצוב, קוד, בדיקה, סקירה, שמירה
 src/validate.js            בדיקה סטטית + משחק אקראי בדפדפן
+src/thumbs.js              צילום תמונה מתוך כל משחק לכרטיס בפורטל
 src/inventions/            ספריית ההמצאות של ה-AI
 src/templates/RUNTIME.md   תיעוד ה-API של זמן הריצה (גם בשביל ה-AI)
 src/themes.js              נושאים: צבעים, אימוג'י, מילים

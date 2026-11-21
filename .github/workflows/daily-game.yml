@@ -34,6 +34,10 @@ jobs:
 
       - run: npm ci
 
+      # דפדפן לצילום תמונת המשחק לפורטל
+      - name: Install browser for screenshots
+        run: npm i --no-save playwright && npx playwright install --with-deps chromium
+
       - name: Generate game
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

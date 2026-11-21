@@ -10,7 +10,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { plan, build, writeGame, writeGallery, readManifest, loadGenres, genreWeight } from './forge.js';
+import { plan, build, writeGame, writeGallery, saveManifest, readManifest, loadGenres, genreWeight } from './forge.js';
+import { makeThumbs } from './thumbs.js';
 import { invent, saveInvention, listInventions } from './invent.js';
 import { THEMES } from './themes.js';
 import { TRENDS_UPDATED, GENRES } from './trends.js';
@@ -32,6 +33,7 @@ if (has('help') || has('h')) {
   node src/cli.js --invent [--idea "כיוון"]   ה-AI ממציא מכניקה חדשה (דורש ANTHROPIC_API_KEY)
   node src/cli.js --inventions          רשימת ההמצאות בספרייה
   node src/cli.js --rebuild             בונה מחדש את כל המשחקים הקיימים עם התבניות העדכניות
+  node src/cli.js --thumbs [all]        מצלם תמונות לפורטל (למשחקים שחסרה להם, או לכולם)
   node src/cli.js --live [...]          מרענן טרנדים אם הם ישנים מ-${MAX_AGE_DAYS} ימים, ואז בונה
 
 ז'אנרים: ${loadGenres().map(g => g.id).join(', ')}
@@ -78,6 +80,16 @@ if (has('rebuild')) {
   process.exit(0);
 }
 
+if (has('thumbs')) {
+  // צילום תמונות לפורטל: רק למשחקים שחסרה להם תמונה, או לכולם עם --thumbs all
+  const all = args[args.indexOf('--thumbs') + 1] === 'all';
+  const man = readManifest(outDir);
+  const n = await makeThumbs(man, outDir, { all, log: m => console.log(m) });
+  if (n > 0) saveManifest(man, outDir);
+  console.log(n < 0 ? 'לא נוצרו תמונות' : `🖼️  נוצרו ${n} תמונות`);
+  process.exit(n < 0 ? 1 : 0);
+}
+
 if (has('inventions')) {
   const inv = listInventions();
   if (!inv.length) console.log('אין עדיין המצאות. הריצו: node src/cli.js --invent');
@@ -100,6 +112,8 @@ if (has('invent')) {
     const p = plan({ seed: opt('seed', String(Date.now())), genre: 'x-' + r.design.id, theme: theme.id, made });
     const file = writeGame(p, outDir);
     console.log(`\n🎮 ${p.title} ${p.icon}\n   📁 ${path.relative(process.cwd(), file)}\n   מעכשיו המחולל יכול לבחור בהמצאה הזו עם כל נושא.\n`);
+    const man = readManifest(outDir);
+    if (await makeThumbs(man, outDir) > 0) saveManifest(man, outDir);
     process.exit(0);
   } catch (e) {
     console.error(`\n⚠️  ההמצאה נכשלה: ${explainError(e)}`);
@@ -153,5 +167,10 @@ for (let i = 0; i < count; i++) {
   console.log(`   ז'אנר: ${p.genreName}${p.variant && p.variant !== 'classic' ? ' (' + p.variantName + ')' : ''} · נושא: ${p.themeName} · קושי: ${p.difficultyName} · seed: ${p.seed}`);
   console.log(`   🧠 למה: ${p.reason}`);
   console.log(`   📁 ${path.relative(process.cwd(), file)}`);
+}
+{
+  const man = readManifest(outDir);
+  const n = await makeThumbs(man, outDir, { log: m => console.log(`   ${m}`) });
+  if (n > 0) saveManifest(man, outDir);
 }
 console.log(`\n🗂  גלריה: ${path.relative(process.cwd(), path.join(outDir, 'index.html'))}\n`);

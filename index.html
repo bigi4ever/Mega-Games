@@ -20,69 +20,72 @@ background:linear-gradient(160deg,var(--b2),var(--b));border:2px solid transpare
 .g.hide{display:none}
 .ic{font-size:52px}.tt{font-size:20px;font-weight:800}
 .tags{display:flex;flex-wrap:wrap;gap:6px}.tags span{font-size:12px;padding:3px 8px;border-radius:99px;background:#ffffff1f;white-space:nowrap}
-.new{position:absolute;top:12px;left:12px;font-size:11px;font-weight:900;padding:3px 8px;border-radius:99px;background:var(--a);color:#111}
+.th{position:relative;margin:-18px -18px 2px;aspect-ratio:4/5;overflow:hidden;border-radius:16px 16px 0 0;background:var(--b)}
+.th img{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block}
+.ic.sm{position:absolute;bottom:8px;right:8px;font-size:30px;line-height:1;background:#0008;border-radius:12px;padding:6px}
+.new{z-index:1;position:absolute;top:12px;left:12px;font-size:11px;font-weight:900;padding:3px 8px;border-radius:99px;background:var(--a);color:#111}
 footer{margin-top:36px;color:var(--mut);font-size:13px}
-@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.ic{font-size:42px}.tt{font-size:16px}h1{font-size:30px}}
+@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.th{margin:-14px -14px 2px}.ic{font-size:42px}.ic.sm{font-size:22px}.tt{font-size:16px}h1{font-size:30px}}
 </style></head><body><div class="wrap">
 <h1>🎮 Mega Games</h1>
 <div class="sub">19 משחקים חינמיים שנוצרו אוטומטית לפי הז'אנרים הפופולריים. בלי הורדה, בלי הרשמה: בוחרים ומשחקים, גם בנייד.</div>
 <div class="chips" id="chips"><button class="on" data-g="">הכול</button><button data-g="קליקר / איידל">קליקר / איידל</button><button data-g="פאזל חצים">פאזל חצים</button><button data-g="התאמת שלוש">התאמת שלוש</button><button data-g="פאזל בלוקים">פאזל בלוקים</button><button data-g="מיזוג שלישיות">מיזוג שלישיות</button><button data-g="ריצה אינסופית">ריצה אינסופית</button><button data-g="הישרדות מול גלים">הישרדות מול גלים</button></div>
 <div class="grid"><a class="g" data-genre="קליקר / איידל" href="games/idle-robots-5a80a9/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
-      <span class="new">חדש</span><div class="ic">⚙️</div><div class="tt">מכרה הסוללות</div>
+      <span class="new">חדש</span><div class="th"><img src="games/idle-robots-5a80a9/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">⚙️</span></div><div class="tt">מכרה הסוללות</div>
       <div class="tags"><span>קליקר / איידל</span><span>בונוס זהב</span><span>רובוטים</span><span>רגיל</span></div></a>
 <a class="g" data-genre="פאזל חצים" href="games/arrows-spooky-f30501/index.html" style="--a:#ff9a1f;--b:#140b1f;--b2:#22122f">
-      <span class="new">חדש</span><div class="ic">➡️</div><div class="tt">המצפן</div>
+      <span class="new">חדש</span><div class="th"><img src="games/arrows-spooky-f30501/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">➡️</span></div><div class="tt">המצפן</div>
       <div class="tags"><span>פאזל חצים</span><span>סיבוב חצים</span><span>מפחיד</span><span>רגיל</span></div></a>
 <a class="g" data-genre="התאמת שלוש" href="games/match3-candy-2f26f4/index.html" style="--a:#ff8ad8;--b:#3b0d36;--b2:#5a1650">
-      <span class="new">חדש</span><div class="ic">🍬</div><div class="tt">מרוץ בארץ הממתקים</div>
+      <span class="new">חדש</span><div class="th"><img src="games/match3-candy-2f26f4/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🍬</span></div><div class="tt">מרוץ בארץ הממתקים</div>
       <div class="tags"><span>התאמת שלוש</span><span>נגד השעון</span><span>ממתקים</span><span>קשה</span></div></a>
 <a class="g" data-genre="פאזל בלוקים" href="games/blockpuzzle-farm-9eb004/index.html" style="--a:#ffb627;--b:#2b3a12;--b2:#3d5219">
-      <div class="ic">🐔</div><div class="tt">בלוקים בחווה</div>
+      <div class="th"><img src="games/blockpuzzle-farm-9eb004/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🐔</span></div><div class="tt">בלוקים בחווה</div>
       <div class="tags"><span>פאזל בלוקים</span><span>פצצות</span><span>חווה</span><span>רגיל</span></div></a>
 <a class="g" data-genre="מיזוג שלישיות" href="games/merge-spooky-491d0f/index.html" style="--a:#ff9a1f;--b:#140b1f;--b2:#22122f">
-      <div class="ic">👻</div><div class="tt">סלעים בבית הקברות</div>
+      <div class="th"><img src="games/merge-spooky-491d0f/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">👻</span></div><div class="tt">סלעים בבית הקברות</div>
       <div class="tags"><span>מיזוג שלישיות</span><span>סלעים</span><span>מפחיד</span><span>קשה</span></div></a>
 <a class="g" data-genre="ריצה אינסופית" href="games/runner-farm-bcc797/index.html" style="--a:#ffb627;--b:#2b3a12;--b2:#3d5219">
-      <div class="ic">🐔</div><div class="tt">תקרה ורצפה</div>
+      <div class="th"><img src="games/runner-farm-bcc797/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🐔</span></div><div class="tt">תקרה ורצפה</div>
       <div class="tags"><span>ריצה אינסופית</span><span>היפוך כבידה</span><span>חווה</span><span>קשה</span></div></a>
 <a class="g" data-genre="הישרדות מול גלים" href="games/survivors-space-928206/index.html" style="--a:#ffcc33;--b:#0b1026;--b2:#151c3d">
-      <div class="ic">🚀</div><div class="tt">הישרדות בחלל</div>
+      <div class="th"><img src="games/survivors-space-928206/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🚀</span></div><div class="tt">הישרדות בחלל</div>
       <div class="tags"><span>הישרדות מול גלים</span><span>אזור מתכווץ</span><span>חלל</span><span>קל</span></div></a>
 <a class="g" data-genre="פאזל חצים" href="games/arrows-farm-459c3e/index.html" style="--a:#ffb627;--b:#2b3a12;--b2:#3d5219">
-      <div class="ic">➡️</div><div class="tt">חצים בחווה</div>
+      <div class="th"><img src="games/arrows-farm-459c3e/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">➡️</span></div><div class="tt">חצים בחווה</div>
       <div class="tags"><span>פאזל חצים</span><span>חווה</span><span>רגיל</span></div></a>
 <a class="g" data-genre="קליקר / איידל" href="games/idle-farm-794578/index.html" style="--a:#ffb627;--b:#2b3a12;--b2:#3d5219">
-      <div class="ic">🌽</div><div class="tt">טייקון החווה</div>
+      <div class="th"><img src="games/idle-farm-794578/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🌽</span></div><div class="tt">טייקון החווה</div>
       <div class="tags"><span>קליקר / איידל</span><span>חווה</span><span>קשה</span></div></a>
 <a class="g" data-genre="פאזל חצים" href="games/arrows-robots-95ec09/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
-      <div class="ic">➡️</div><div class="tt">מבוך החצים</div>
+      <div class="th"><img src="games/arrows-robots-95ec09/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">➡️</span></div><div class="tt">מבוך החצים</div>
       <div class="tags"><span>פאזל חצים</span><span>רובוטים</span><span>קל</span></div></a>
 <a class="g" data-genre="ריצה אינסופית" href="games/runner-fantasy-6db496/index.html" style="--a:#ffd700;--b:#1a1033;--b2:#2a1a4d">
-      <div class="ic">🧙</div><div class="tt">בריחה מהממלכה</div>
+      <div class="th"><img src="games/runner-fantasy-6db496/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🧙</span></div><div class="tt">בריחה מהממלכה</div>
       <div class="tags"><span>ריצה אינסופית</span><span>פנטזיה</span><span>קשה</span></div></a>
 <a class="g" data-genre="התאמת שלוש" href="games/match3-jungle-b72bef/index.html" style="--a:#ffd23f;--b:#0f2a17;--b2:#173d22">
-      <div class="ic">🍌</div><div class="tt">שלוש בג'ונגל</div>
+      <div class="th"><img src="games/match3-jungle-b72bef/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🍌</span></div><div class="tt">שלוש בג'ונגל</div>
       <div class="tags"><span>התאמת שלוש</span><span>ג'ונגל</span><span>רגיל</span></div></a>
 <a class="g" data-genre="פאזל בלוקים" href="games/blockpuzzle-robots-a27890/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
-      <div class="ic">🤖</div><div class="tt">פאזל העיר הממוכנת</div>
+      <div class="th"><img src="games/blockpuzzle-robots-a27890/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🤖</span></div><div class="tt">פאזל העיר הממוכנת</div>
       <div class="tags"><span>פאזל בלוקים</span><span>רובוטים</span><span>רגיל</span></div></a>
 <a class="g" data-genre="הישרדות מול גלים" href="games/survivors-spooky-316990/index.html" style="--a:#ff9a1f;--b:#140b1f;--b2:#22122f">
-      <div class="ic">🎃</div><div class="tt">הדלעת נגד כולם</div>
+      <div class="th"><img src="games/survivors-spooky-316990/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🎃</span></div><div class="tt">הדלעת נגד כולם</div>
       <div class="tags"><span>הישרדות מול גלים</span><span>מפחיד</span><span>קשה</span></div></a>
 <a class="g" data-genre="פאזל בלוקים" href="games/blockpuzzle-ocean-a0bf3a/index.html" style="--a:#4dfff3;--b:#062a40;--b2:#0a3d5c">
-      <div class="ic">🐬</div><div class="tt">לבנים במעמקים</div>
+      <div class="th"><img src="games/blockpuzzle-ocean-a0bf3a/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🐬</span></div><div class="tt">לבנים במעמקים</div>
       <div class="tags"><span>פאזל בלוקים</span><span>אוקיינוס</span><span>רגיל</span></div></a>
 <a class="g" data-genre="פאזל בלוקים" href="games/blockpuzzle-spooky-efba2c/index.html" style="--a:#ff9a1f;--b:#140b1f;--b2:#22122f">
-      <div class="ic">🎃</div><div class="tt">פאזל בית הקברות</div>
+      <div class="th"><img src="games/blockpuzzle-spooky-efba2c/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🎃</span></div><div class="tt">פאזל בית הקברות</div>
       <div class="tags"><span>פאזל בלוקים</span><span>מפחיד</span><span>קשה</span></div></a>
 <a class="g" data-genre="ריצה אינסופית" href="games/runner-ocean-196a65/index.html" style="--a:#4dfff3;--b:#062a40;--b2:#0a3d5c">
-      <div class="ic">🐬</div><div class="tt">ריצה במעמקים</div>
+      <div class="th"><img src="games/runner-ocean-196a65/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🐬</span></div><div class="tt">ריצה במעמקים</div>
       <div class="tags"><span>ריצה אינסופית</span><span>אוקיינוס</span><span>קל</span></div></a>
 <a class="g" data-genre="מיזוג שלישיות" href="games/merge-robots-673991/index.html" style="--a:#00e5ff;--b:#0d1418;--b2:#16232a">
-      <div class="ic">💾</div><div class="tt">מיזוג ממוכן</div>
+      <div class="th"><img src="games/merge-robots-673991/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">💾</span></div><div class="tt">מיזוג ממוכן</div>
       <div class="tags"><span>מיזוג שלישיות</span><span>רובוטים</span><span>רגיל</span></div></a>
 <a class="g" data-genre="הישרדות מול גלים" href="games/survivors-jungle-6c7c4f/index.html" style="--a:#ffd23f;--b:#0f2a17;--b2:#173d22">
-      <div class="ic">🐒</div><div class="tt">הקוף האחרון</div>
+      <div class="th"><img src="games/survivors-jungle-6c7c4f/thumb.jpg" alt="" loading="lazy" width="390" height="560"><span class="ic sm">🐒</span></div><div class="tt">הקוף האחרון</div>
       <div class="tags"><span>הישרדות מול גלים</span><span>ג'ונגל</span><span>רגיל</span></div></a></div>
 <footer>נוצר ע"י Game Forge</footer>
 </div>

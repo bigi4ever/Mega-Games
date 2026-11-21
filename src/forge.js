@@ -200,6 +200,11 @@ export function build(p) {
 }
 
 // ---------- מאגר המשחקים שנוצרו ----------
+export function saveManifest(manifest, outDir) {
+  fs.writeFileSync(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  writeGallery(manifest, outDir);
+}
+
 export function readManifest(outDir) {
   const f = path.join(outDir, 'manifest.json');
   return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : [];
@@ -232,7 +237,9 @@ function renderGallery(manifest, prefix) {
   const cards = list.map((m, i) => {
     const t = THEMES.find(x => x.id === m.theme) || THEMES[0];
     return `<a class="g" data-genre="${esc(m.genreName)}" href="${prefix}${m.slug}/index.html" style="--a:${t.palette.accent};--b:${t.palette.bg};--b2:${t.palette.bg2}">
-      ${i < 3 ? '<span class="new">חדש</span>' : ''}<div class="ic">${m.icon}</div><div class="tt">${esc(m.title)}</div>
+      ${i < 3 ? '<span class="new">חדש</span>' : ''}${m.thumb
+        ? `<div class="th"><img src="${prefix}${m.slug}/${m.thumb}" alt="" loading="lazy" width="390" height="560"><span class="ic sm">${m.icon}</span></div>`
+        : `<div class="ic">${m.icon}</div>`}<div class="tt">${esc(m.title)}</div>
       <div class="tags"><span>${esc(m.genreName)}</span>${m.variant && m.variant !== 'classic' ? `<span>${esc(m.variantName)}</span>` : ''}<span>${esc(m.themeName)}</span><span>${esc(m.difficultyName)}</span></div></a>`;
   }).join('\n');
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
@@ -257,9 +264,12 @@ background:linear-gradient(160deg,var(--b2),var(--b));border:2px solid transpare
 .g.hide{display:none}
 .ic{font-size:52px}.tt{font-size:20px;font-weight:800}
 .tags{display:flex;flex-wrap:wrap;gap:6px}.tags span{font-size:12px;padding:3px 8px;border-radius:99px;background:#ffffff1f;white-space:nowrap}
-.new{position:absolute;top:12px;left:12px;font-size:11px;font-weight:900;padding:3px 8px;border-radius:99px;background:var(--a);color:#111}
+.th{position:relative;margin:-18px -18px 2px;aspect-ratio:4/5;overflow:hidden;border-radius:16px 16px 0 0;background:var(--b)}
+.th img{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block}
+.ic.sm{position:absolute;bottom:8px;right:8px;font-size:30px;line-height:1;background:#0008;border-radius:12px;padding:6px}
+.new{z-index:1;position:absolute;top:12px;left:12px;font-size:11px;font-weight:900;padding:3px 8px;border-radius:99px;background:var(--a);color:#111}
 footer{margin-top:36px;color:var(--mut);font-size:13px}
-@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.ic{font-size:42px}.tt{font-size:16px}h1{font-size:30px}}
+@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.g{padding:14px}.th{margin:-14px -14px 2px}.ic{font-size:42px}.ic.sm{font-size:22px}.tt{font-size:16px}h1{font-size:30px}}
 </style></head><body><div class="wrap">
 <h1>🎮 Mega Games</h1>
 <div class="sub">${manifest.length} משחקים חינמיים שנוצרו אוטומטית לפי הז'אנרים הפופולריים. בלי הורדה, בלי הרשמה: בוחרים ומשחקים, גם בנייד.</div>
