@@ -445,5 +445,28 @@
     "reason": "נבחר ידנית",
     "created": "2026-11-21T15:05:05.763Z",
     "thumb": "thumb.jpg"
+  },
+  {
+    "slug": "blockpuzzle-space-1d0b2f",
+    "seed": "daily-2026-11-21-44920724879",
+    "title": "כוכבים בחלל",
+    "icon": "🚀",
+    "genre": "blockpuzzle",
+    "genreName": "פאזל בלוקים",
+    "template": "blockpuzzle",
+    "theme": "space",
+    "themeName": "חלל",
+    "difficulty": "normal",
+    "difficultyName": "רגיל",
+    "howto": "על הלוח מפוזרים ⭐. נקה את השורות והעמודות שלהם כדי לאסוף את כולם ולעבור שלב. בכל שלב יש יותר כוכבים.",
+    "variant": "stars",
+    "variantName": "איסוף כוכבים",
+    "params": {
+      "bigChance": 0.45,
+      "variant": "stars"
+    },
+    "reason": "פאזל בלוקים: פופולריות 95/100 (ציון בסיס), נוצרו כבר 4, סיכוי בחירה 6%. הנחת צורות על לוח 8×8 וניקוי שורות. נמצא דרך קבע בטופ ההורדות, לכל הגילאים.",
+    "created": "2026-11-21T15:44:15.447Z",
+    "thumb": "thumb.jpg"
   }
 ]
