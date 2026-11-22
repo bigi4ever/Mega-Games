@@ -493,5 +493,33 @@
     "reason": "נבחר ידנית",
     "created": "2026-11-21T15:58:03.147Z",
     "thumb": "thumb.jpg"
+  },
+  {
+    "slug": "survivors-fantasy-cc2355",
+    "seed": "daily-2026-11-22-45017167276",
+    "title": "המגן של הקוסם",
+    "icon": "🧙",
+    "genre": "survivors",
+    "genreName": "הישרדות מול גלים",
+    "template": "survivors",
+    "theme": "fantasy",
+    "themeName": "פנטזיה",
+    "difficulty": "normal",
+    "difficultyName": "רגיל",
+    "howto": "אין נשק! 💰 מסתובבים סביבך ופוגעים בכל מי שמתקרב. גרור באצבע או השתמש בחיצים כדי לנווט את המגינים אל 👹🧌. שדרג את מספר המגינים, המהירות והטווח.",
+    "variant": "orbiter",
+    "variantName": "מגינים מסתובבים",
+    "params": {
+      "enemySpeed": 65.7,
+      "spawnRate": 1.1,
+      "playerSpeed": 204.85,
+      "fireRate": 1.77,
+      "hp": 6,
+      "bossEvery": 59,
+      "variant": "orbiter"
+    },
+    "reason": "הישרדות מול גלים: פופולריות 90/100 (ציון בסיס), נוצרו כבר 3, סיכוי בחירה 6%. ז'אנר ה-\"survivors-like\": שליטה פשוטה, ירי אוטומטי ובחירת שדרוגים. אחד הז'אנרים הלוהטים ב-PC ובמובייל.",
+    "created": "2026-11-22T11:24:53.716Z",
+    "thumb": "thumb.jpg"
   }
 ]
