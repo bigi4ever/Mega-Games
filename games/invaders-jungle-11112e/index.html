@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>צלילה בג'ונגל</title>
+<style>
+  :root { --bg:#111; --bg2:#222; --fg:#fff; --accent:#fc3; --danger:#f44; --grid:#333; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); overflow:hidden;
+    font-family: system-ui, "Segoe UI", "Rubik", Arial, sans-serif; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center;
+    padding:10px 16px; font-weight:800; font-size:18px; pointer-events:none; text-shadow:0 2px 4px #000a; gap:10px; z-index:5; }
+  #ov { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000a;
+    backdrop-filter:blur(4px); z-index:20; padding:16px; box-sizing:border-box; }
+  .card { background:var(--bg2); border:2px solid var(--accent); border-radius:20px; padding:24px 22px;
+    width:min(420px,100%); text-align:center; box-shadow:0 12px 48px #000c; box-sizing:border-box; }
+  .card h1 { margin:0 0 6px; font-size:30px; color:var(--accent); line-height:1.2; }
+  .card h2 { margin:0 0 10px; font-size:22px; }
+  .card p { opacity:.88; line-height:1.55; margin:8px 0; }
+  .card .big { font-size:64px; line-height:1.1; margin:4px 0; }
+  .card .stat { font-size:20px; font-weight:800; margin:6px 0; }
+  .btn { background:var(--accent); color:var(--bg); border:0; border-radius:14px; padding:12px 28px; font-size:20px;
+    font-weight:900; cursor:pointer; margin:8px 4px 0; font-family:inherit; transition:transform .1s; }
+  .btn:active { transform:scale(.95); }
+  .choice { display:flex; align-items:center; gap:12px; width:100%; text-align:right; background:var(--bg);
+    color:var(--fg); border:2px solid var(--grid); border-radius:14px; padding:12px 14px; margin:8px 0; cursor:pointer;
+    font:inherit; font-size:17px; font-weight:700; }
+  .choice:hover { border-color:var(--accent); }
+  .choice .ic { font-size:30px; }
+  .hidden { display:none !important; }
+  .credit { font-size:12px; opacity:.5; margin-top:14px; }
+  #hud .hr { display:flex; align-items:center; gap:8px; }
+  #hud #hudR, #hud #hudL { white-space:nowrap; }
+  @media (max-width:440px) { #hud { font-size:clamp(12px, 3.9vw, 17px); padding:8px 10px; gap:6px; } #home { width:34px; height:34px; font-size:16px; } }
+  #home { pointer-events:auto; width:38px; height:38px; flex:none; display:grid; place-items:center; border-radius:50%;
+    background:#0007; border:1px solid #fff3; text-decoration:none; font-size:18px; text-shadow:none; }
+  #home:active { transform:scale(.92); }
+  .home-link { display:inline-block; color:var(--fg); opacity:.85; font-size:14px; margin-top:10px; text-decoration:none; }
+  .snd { background:none; border:1px solid var(--grid); color:var(--fg); border-radius:99px; padding:6px 14px; margin-top:12px; font:inherit; font-size:14px; cursor:pointer; opacity:.85; }
+  
+</style>
+</head>
+<body>
+<canvas id="c" dir="ltr"></canvas>
+<div id="hud"><span class="hr"><a id="home" href="../../index.html" aria-label="חזרה לכל המשחקים" title="לכל המשחקים">🏠</a><span id="hudR"></span></span><span id="hudL"></span></div>
+<div id="app"></div>
+<div id="ov" class="hidden"><div class="card" id="card"></div></div>
+<script type="application/json" id="cfg">{"slug":"invaders-jungle-11112e","title":"צלילה בג'ונגל","icon":"🐒","howto":"🐍🦂 יוצאים מהמערך וצוללים לעברך במסלולים מעוגלים! גרור כדי להתחמק, והחללית יורה לבד.","genreName":"יריות מול פולשים · צלילות","theme":{"id":"jungle","name":"ג'ונגל","palette":{"bg":"#0f2a17","bg2":"#173d22","fg":"#eaffea","accent":"#ffd23f","danger":"#ff5a36","grid":"#1e4d2b"},"hero":"🐒","enemies":["🐍","🦂","🕷️","🐊"],"boss":"🦍","pickup":"🍌","obstacle":["🌵","🪨"],"tiers":["🌱","🌿","🍀","🌴","🌳","🍌","🥥","🦜","🐯","👑"],"gems":["🍌","🥥","🦜","🐸","🌺","🍍"],"currency":"🍌","clickable":"🌴","buildings":[["🐒","קוף קוטף"],["🦜","תוכי שליח"],["🐘","פיל סבל"],["🛖","כפר"],["🗿","מקדש"],["🌋","הר געש"]],"words":{"place":"הג'ונגל","hero":"הקוף","thing":"הבננות","adj":"פראי"}},"params":{"speed":42.76,"reload":0.44,"enemyFire":1.21,"diveEvery":2.69,"variant":"dive"}}</script>
+<script>
+"use strict";
+// ---------- זמן ריצה משותף לכל המשחקים ----------
+const CFG = JSON.parse(document.getElementById('cfg').textContent);
+const T = CFG.theme, P = T.palette, S = CFG.params;
+for (const [k, v] of Object.entries(P)) document.documentElement.style.setProperty('--' + k, v);
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const G = { state: 'menu', score: 0 };
+const keys = new Set();
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+const fmt = n => {
+  if (n < 1000) return (Math.round(n * 10) / 10).toLocaleString('en-US');
+  const u = ['K', 'M', 'B', 'T', 'aa', 'ab', 'ac', 'ad'];
+  let i = -1; while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+  return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + u[i];
+};
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(CFG.slug + ':' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(CFG.slug + ':' + k, JSON.stringify(v)); } catch (e) {} },
+};
+
+let AC = null, MASTER = null, muted = store.get('muted', false);
+// מנוע הצלילים: מתנד -> עוצמה -> מדחס -> יציאה. הדפדפן מאפשר להפעיל צלילים רק אחרי מגע או מקש,
+// לכן המנוע נוצר ו"משוחרר" במגע הראשון בכל מקום בדף.
+function audio() {
+  if (!AC) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    AC = new Ctx();
+    const comp = AC.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6;
+    MASTER = AC.createGain(); MASTER.gain.value = 0.9;
+    MASTER.connect(comp).connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume().catch(() => {});
+  return AC;
+}
+for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, () => { try { audio(); } catch (e) {} }, { capture: true, passive: true });
+function setMuted(v) { muted = v; store.set('muted', v); }
+function beep(freq = 440, dur = 0.08, type = 'square', vol = 0.04) {
+  if (muted) return;
+  try {
+    const ac = audio(); if (!ac) return;
+    const t0 = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    // העוצמות בתבניות קטנות (0.01-0.06), ולכן מוגברות כאן; גלים רכים (sine/triangle) מקבלים יותר
+    const level = Math.min(0.6, vol * (type === 'sine' || type === 'triangle' ? 9 : 5));
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(level, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.04);
+    o.connect(g).connect(MASTER); o.start(t0); o.stop(t0 + dur + 0.05);
+  } catch (e) {}
+}
+
+// ציור אימוג'י דרך מטמון של קנבסים קטנים (מהיר בהרבה מ-fillText בכל פריים)
+const emojiCache = new Map();
+function drawEmoji(e, x, y, size, flip = false, alpha = 1) {
+  const key = e + '|' + Math.round(size);
+  let c = emojiCache.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    const px = Math.ceil(size * 1.35 * DPR);
+    c.width = c.height = px;
+    const g = c.getContext('2d');
+    g.font = `${size * DPR}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(e, px / 2, px / 2 + size * 0.08 * DPR);
+    emojiCache.set(key, c);
+  }
+  const s = c.width / DPR;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  if (flip) ctx.scale(-1, 1);
+  ctx.drawImage(c, -s / 2, -s / 2, s, s);
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// אפקטים: חלקיקים וטקסט צף
+const fx = [];
+function burst(x, y, color, n = 10, speed = 160) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = rand(speed * 0.3, speed);
+    fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.3, 0.7), max: 0.7, color, r: rand(2, 4) });
+  }
+}
+function floatText(x, y, text, color = P.accent, size = 20) {
+  fx.push({ x, y, vx: 0, vy: -50, life: 0.9, max: 0.9, text, color, size });
+}
+function updFx(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const p = fx[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (!p.text) { p.vx *= 0.92; p.vy *= 0.92; }
+    if (p.life <= 0) fx.splice(i, 1);
+  }
+}
+function drawFx(ox = 0, oy = 0) {
+  for (const p of fx) {
+    ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+    if (p.text) {
+      ctx.fillStyle = p.color; ctx.font = `900 ${p.size}px system-ui,sans-serif`; ctx.textAlign = 'center';
+      ctx.strokeStyle = '#000a'; ctx.lineWidth = 4; ctx.strokeText(p.text, p.x - ox, p.y - oy); ctx.fillText(p.text, p.x - ox, p.y - oy);
+    } else {
+      ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x - ox, p.y - oy, p.r, 0, 7); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ממשק: HUD וכרטיסים
+const $ov = document.getElementById('ov'), $card = document.getElementById('card');
+const $hudR = document.getElementById('hudR'), $hudL = document.getElementById('hudL');
+function hud(right = '', left = '') {
+  if ($hudR._v !== right) { $hudR.innerHTML = right; $hudR._v = right; }
+  if ($hudL._v !== left) { $hudL.innerHTML = left; $hudL._v = left; }
+}
+function showCard(html) { $card.innerHTML = html; $ov.classList.remove('hidden'); }
+function hideCard() { $ov.classList.add('hidden'); }
+
+const soundBtn = () => `<div><button class="snd" id="snd">${muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'}</button></div>
+  <a class="home-link" href="../../index.html">🏠 לכל המשחקים</a>`;
+function wireSound() {
+  const b = document.getElementById('snd'); if (!b) return;
+  b.onclick = () => { setMuted(!muted); b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; if (!muted) beep(660, 0.12, 'triangle', 0.05); };
+}
+function menu() {
+  G.state = 'menu';
+  const best = store.get('best', 0);
+  showCard(`
+    <div class="big">${CFG.icon}</div>
+    <h1>${CFG.title}</h1>
+    <p>${CFG.howto}</p>
+    ${best ? `<div class="stat">🏆 שיא: ${fmt(best)}</div>` : ''}
+    <button class="btn" id="play">▶ שחק</button>
+    ${soundBtn()}
+    <div class="credit">${CFG.genreName} · ${T.name} · נוצר אוטומטית ע"י Game Forge</div>`);
+  document.getElementById('play').onclick = startGame;
+  wireSound();
+}
+function startGame() {
+  hideCard(); fx.length = 0; G.score = 0; G.state = 'play'; game.reset(); beep(660, 0.1, 'triangle');
+}
+function gameOver(score, extra = '') {
+  G.state = 'over';
+  const prev = store.get('best', 0), rec = score > prev;
+  if (rec) store.set('best', score);
+  beep(180, 0.4, 'sawtooth', 0.05);
+  setTimeout(() => {
+    showCard(`
+      <div class="big">${rec ? '🏆' : '💥'}</div>
+      <h1>${rec ? 'שיא חדש!' : 'המשחק נגמר'}</h1>
+      <div class="stat">ניקוד: ${fmt(score)}</div>
+      ${extra ? `<p>${extra}</p>` : ''}
+      <p>שיא: ${fmt(Math.max(prev, score))}</p>
+      <button class="btn" id="again">↻ שוב</button>
+      ${soundBtn()}`);
+    document.getElementById('again').onclick = startGame;
+    wireSound();
+  }, 450);
+}
+
+function fit() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  emojiCache.clear();
+  if (typeof game !== 'undefined' && game.resize) game.resize();
+}
+
+const ptr = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+// אירועי קלט יכולים להגיע לפני שסקריפט המשחק נטען (למשל אצבע על המסך בזמן הטעינה), לכן בודקים שהמשחק קיים ושהלולאה התחילה
+let booted = false;
+const ready = () => booted && typeof game !== 'undefined';
+const active = () => ready() && (G.state === 'play' || game.autostart);
+cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId); } catch {} if (active()) game.down?.(...ptr(e)); });
+cv.addEventListener('pointermove', e => { if (active()) game.move?.(...ptr(e)); });
+cv.addEventListener('pointerup', e => { if (active()) game.up?.(...ptr(e)); });
+cv.addEventListener('pointercancel', e => { if (ready() && G.state === 'play') game.up?.(...ptr(e)); });
+window.addEventListener('keydown', e => {
+  keys.add(e.code);
+  if (e.code === 'KeyM') { setMuted(!muted); const b = document.getElementById('snd'); if (b) b.textContent = muted ? '🔇 צלילים כבויים' : '🔊 צלילים פועלים'; }
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  if ((e.code === 'Space' || e.code === 'Enter') && (G.state === 'menu' || G.state === 'over') && !$ov.classList.contains('hidden')) {
+    const b = $card.querySelector('.btn'); if (b) { b.click(); return; }
+  }
+  if (ready() && G.state === 'play') game.key?.(e.code);
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+</script>
+<script>
+"use strict";
+// ---------- לוגיקת המשחק (נוצרה מהתבנית: invaders) ----------
+// יריות מול מערך פולשים: החללית יורה לבד, מזיזים אותה ימינה ושמאלה, ומחסלים מערך אויבים שיורד ויורה בחזרה.
+// וריאציות (S.variant):
+//   classic - המערך זז מצד לצד ויורד שורה בכל פעם שהוא מגיע לקצה; יש מחסות שנשחקות
+//   dive    - המערך מתנדנד למעלה, ואויבים צוללים לעברך במסלולים מעוגלים
+//   boss    - בכל שלב שלישי מגיע בוס ענק עם פס חיים ויריות מפוצלות
+const VAR = S.variant || 'classic';
+let ship, shots, eshots, foes, shields, level, lives, dir, t, fireT, boss, ufo, ufoT, triple, cell, gx, gy, inv;
+
+function isBossLevel() { return VAR === 'boss' && level % 3 === 0; }
+
+function buildLevel() {
+  shots = []; eshots = []; boss = null; ufo = null; ufoT = rand(8, 14);
+  const cols = W < 420 ? 7 : 9, rows = isBossLevel() ? 2 : Math.min(5, 3 + Math.floor((level + 1) / 2));
+  cell = Math.min(54, (W - 40) / (cols + 1.5));
+  gx = (W - cols * cell) / 2; gy = 76 + Math.min(level - 1, 4) * cell * 0.25; dir = 1;
+  foes = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const tier = Math.max(0, Math.min(T.enemies.length - 1, rows - 1 - r));
+    foes.push({ c, r, ox: c * cell, oy: r * cell * 0.9, e: T.enemies[tier], hp: 1 + (tier >= 2 && level >= 3 ? 1 : 0), pts: (tier + 1) * 10, dive: null, x: 0, y: 0 });
+  }
+  if (isBossLevel()) boss = { x: W / 2, y: 120, hp: 40 + level * 8, max: 40 + level * 8, vx: 90, fireT: 1.5, hit: 0 };
+  shields = [];
+  if (VAR !== 'dive') {
+    // מחסות: גושים קטנים שנשחקים מפגיעות (גם של האויבים וגם שלך)
+    const n = W < 420 ? 3 : 4, bw = 9, by = ship.y - 90;
+    for (let k = 0; k < n; k++) {
+      const cx = W * (k + 1) / (n + 1);
+      for (let i = -3; i <= 3; i++) for (let j = 0; j < 3; j++) {
+        if (j === 2 && Math.abs(i) < 2) continue;
+        shields.push({ x: cx + i * bw, y: by + j * bw, s: bw, hp: 2 });
+      }
+    }
+  }
+}
+
+function foePos(f) {
+  if (f.dive) return [f.x, f.y];
+  if (VAR === 'dive') return [gx + f.ox + Math.sin(t * 1.2) * 30, gy + f.oy];
+  return [gx + f.ox, gy + f.oy];
+}
+
+function playerHit() {
+  if (ship.inv > 0) return;
+  lives--; ship.inv = 1.6; burst(ship.x, ship.y, P.danger, 30, 240); beep(110, 0.35, 'sawtooth', 0.06);
+  if (lives <= 0) gameOver(G.score, `הגעת לשלב ${level}`);
+}
+
+function killFoe(f, i) {
+  foes.splice(i, 1);
+  const [x, y] = foePos(f);
+  G.score += f.pts * level; burst(x, y, P.danger, 12, 170);
+  beep(220 + Math.random() * 120, 0.08, 'square', 0.04);
+}
+
+function hitShield(x, y) {
+  for (let i = shields.length - 1; i >= 0; i--) {
+    const s = shields[i];
+    if (Math.abs(x - s.x) < s.s / 2 + 2 && Math.abs(y - s.y) < s.s / 2 + 4) {
+      if (--s.hp <= 0) shields.splice(i, 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+function levelClear() {
+  const bonus = 150 * level; G.score += bonus;
+  floatText(W / 2, H / 2, `שלב ${level} הושלם! +${bonus}`, P.accent, 28);
+  beep(880, 0.15, 'triangle'); setTimeout(() => beep(1320, 0.2, 'triangle'), 120);
+  level++; buildLevel();
+  if (isBossLevel()) floatText(W / 2, H / 2 + 40, '⚠️ בוס!', P.danger, 30);
+}
+
+const game = {
+  resize() { if (ship) ship.y = H - Math.max(80, H * 0.11); },
+  reset() {
+    ship = { x: W / 2, y: H - Math.max(80, H * 0.11), inv: 0 };
+    level = 1; lives = 3; t = 0; fireT = 0; triple = 0; inv = 0;
+    buildLevel();
+  },
+  down(x) { ship.x = clamp(x, 24, W - 24); },
+  move(x) { ship.x = clamp(x, 24, W - 24); },
+  update(dt) {
+    t += dt; ship.inv -= dt; triple -= dt;
+    if (keys.has('ArrowLeft') || keys.has('KeyA')) ship.x -= 420 * dt;
+    if (keys.has('ArrowRight') || keys.has('KeyD')) ship.x += 420 * dt;
+    ship.x = clamp(ship.x, 24, W - 24);
+
+    // ירי אוטומטי
+    fireT -= dt;
+    if (fireT <= 0) {
+      fireT = S.reload;
+      const spread = triple > 0 ? [-0.18, 0, 0.18] : [0];
+      for (const a of spread) shots.push({ x: ship.x, y: ship.y - 22, vx: Math.sin(a) * 620, vy: -Math.cos(a) * 620 });
+      beep(880, 0.03, 'square', 0.012);
+    }
+
+    // תנועת המערך
+    const alive = foes.filter(f => !f.dive).length, total = Math.max(1, alive + foes.filter(f => f.dive).length);
+    if (VAR !== 'dive') {
+      const sp = S.speed * (1 + (level - 1) * 0.12) * (1 + (1 - foes.length / Math.max(1, foes.length + 1)) * 0.2) * (foes.length < 6 ? 1.8 : 1);
+      gx += dir * sp * dt;
+      const xs = foes.map(f => gx + f.ox);
+      if (xs.length && (Math.min(...xs) < 20 || Math.max(...xs) > W - 20)) {
+        dir *= -1; gx += dir * sp * dt * 2; gy += cell * 0.45; beep(90, 0.06, 'square', 0.03);
+      }
+    } else if (foes.length) {
+      // צוללים: כל כמה שניות אויב יוצא מהמערך ומסתער במסלול מעוגל
+      inv -= dt;
+      if (inv <= 0) {
+        const pool = foes.filter(f => !f.dive);
+        if (pool.length) {
+          const f = pick(pool), [x, y] = foePos(f);
+          f.dive = { t: 0, sx: x, sy: y, tx: ship.x, side: x < W / 2 ? 1 : -1 }; f.x = x; f.y = y;
+          beep(300, 0.2, 'sawtooth', 0.025);
+        }
+        inv = Math.max(0.6, S.diveEvery - level * 0.15);
+      }
+      for (const f of foes) {
+        if (!f.dive) continue;
+        const d = f.dive; d.t += dt * (0.55 + level * 0.04);
+        const k = d.t;
+        f.x = d.sx + Math.sin(k * Math.PI) * 120 * d.side + (d.tx - d.sx) * Math.min(1, k);
+        f.y = d.sy + k * (H - d.sy + 60);
+        if (Math.random() < dt * 0.9) eshots.push({ x: f.x, y: f.y + 16, vx: 0, vy: 280 });
+        if (f.y > H + 40) { f.dive = null; } // חוזר לעמדה במערך
+        else if (dist(f.x, f.y, ship.x, ship.y) < cell * 0.55) { playerHit(); f.dive = null; }
+      }
+    }
+
+    // ירי האויבים: מהאויב התחתון בעמודה אקראית
+    if (foes.length && Math.random() < dt * S.enemyFire * (1 + level * 0.15)) {
+      const cols = [...new Set(foes.filter(f => !f.dive).map(f => f.c))];
+      if (cols.length) {
+        const c = pick(cols), f = foes.filter(x => x.c === c && !x.dive).sort((a, b) => b.r - a.r)[0], [x, y] = foePos(f);
+        eshots.push({ x, y: y + 16, vx: 0, vy: 260 + level * 12 });
+      }
+    }
+
+    if (boss) {
+      boss.x += boss.vx * dt; if (boss.x < 80 || boss.x > W - 80) boss.vx *= -1;
+      boss.hit -= dt; boss.fireT -= dt;
+      if (boss.fireT <= 0) {
+        boss.fireT = Math.max(0.7, 1.6 - level * 0.05);
+        for (const a of [-0.5, -0.25, 0, 0.25, 0.5]) eshots.push({ x: boss.x, y: boss.y + 40, vx: Math.sin(a) * 240, vy: Math.cos(a) * 240 });
+        beep(140, 0.15, 'sawtooth', 0.04);
+      }
+    }
+
+    // צלחת בונוס שחוצה את המסך: פגיעה בה נותנת ירי משולש
+    ufoT -= dt;
+    if (!ufo && ufoT <= 0) { ufo = { x: -30, y: 58, vx: 150 }; }
+    if (ufo) { ufo.x += ufo.vx * dt; if (ufo.x > W + 40) { ufo = null; ufoT = rand(10, 18); } }
+
+    // קליעים שלך
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const s = shots[i]; s.x += s.vx * dt; s.y += s.vy * dt;
+      let gone = s.y < 40; // הקליעים שלך עוברים דרך המחסות; רק יריות האויבים שוחקות אותן
+      if (!gone && ufo && dist(s.x, s.y, ufo.x, ufo.y) < 22) {
+        gone = true; triple = 10; G.score += 100 * level; burst(ufo.x, ufo.y, P.accent, 25, 200);
+        floatText(ufo.x, ufo.y + 20, '🔱 ירי משולש!', P.accent, 20); beep(1200, 0.2, 'triangle', 0.05); ufo = null; ufoT = rand(12, 20);
+      }
+      if (!gone && boss && Math.abs(s.x - boss.x) < 46 && Math.abs(s.y - boss.y) < 40) {
+        gone = true; boss.hp--; boss.hit = 0.08; beep(160, 0.03, 'square', 0.02);
+        if (boss.hp <= 0) { burst(boss.x, boss.y, P.danger, 70, 320); G.score += 1000 * level; boss = null; floatText(W / 2, 140, 'הבוס הובס!', P.accent, 30); }
+      }
+      for (let j = foes.length - 1; j >= 0 && !gone; j--) {
+        const f = foes[j], [x, y] = foePos(f);
+        if (Math.abs(s.x - x) < cell * 0.42 && Math.abs(s.y - y) < cell * 0.42) {
+          gone = true;
+          if (--f.hp <= 0) killFoe(f, j); else beep(500, 0.03, 'square', 0.02);
+        }
+      }
+      if (gone) shots.splice(i, 1);
+    }
+    // קליעי אויבים
+    for (let i = eshots.length - 1; i >= 0; i--) {
+      const s = eshots[i]; s.x += s.vx * dt; s.y += s.vy * dt;
+      if (s.y > H + 10 || hitShield(s.x, s.y)) { eshots.splice(i, 1); continue; }
+      if (Math.abs(s.x - ship.x) < 18 && Math.abs(s.y - ship.y) < 18) { eshots.splice(i, 1); playerHit(); if (G.state !== 'play') return; }
+    }
+    // המערך הגיע למטה
+    if (VAR !== 'dive' && foes.some(f => gy + f.oy > ship.y - 40)) { gameOver(G.score, `הפולשים נחתו · שלב ${level}`); return; }
+    if (!foes.length && !boss) levelClear();
+  },
+  draw() {
+    ctx.fillStyle = P.bg; ctx.fillRect(0, 0, W, H);
+    // כוכבים ברקע
+    ctx.fillStyle = P.fg + '55';
+    for (let i = 0; i < 60; i++) { const x = (i * 97) % W, y = ((i * 53) % H + (t || 0) * (10 + i % 5 * 8)) % H; ctx.fillRect(x, y, 2, 2); }
+    if (!ship) return;
+    for (const s of shields) { ctx.fillStyle = s.hp > 1 ? P.accent : P.accent + '88'; ctx.fillRect(s.x - s.s / 2, s.y - s.s / 2, s.s - 1, s.s - 1); }
+    for (const f of foes) {
+      const [x, y] = foePos(f);
+      const bob = Math.sin(t * 6 + f.c) * 2;
+      drawEmoji(f.e, x, y + bob, cell * 0.72, f.dive ? f.x < ship.x : false);
+    }
+    if (boss) {
+      if (boss.hit > 0) { ctx.fillStyle = '#fff6'; ctx.beginPath(); ctx.arc(boss.x, boss.y, 52, 0, 7); ctx.fill(); }
+      drawEmoji(T.boss, boss.x, boss.y, 96);
+      ctx.fillStyle = '#0008'; ctx.fillRect(W * 0.15, 54, W * 0.7, 8);
+      ctx.fillStyle = P.danger; ctx.fillRect(W * 0.15, 54, W * 0.7 * boss.hp / boss.max, 8);
+    }
+    if (ufo) drawEmoji(T.pickup, ufo.x, ufo.y, 30);
+    ctx.fillStyle = P.accent; ctx.shadowColor = P.accent; ctx.shadowBlur = 8;
+    for (const s of shots) ctx.fillRect(s.x - 2, s.y - 8, 4, 14);
+    ctx.shadowBlur = 0; ctx.fillStyle = P.danger;
+    for (const s of eshots) { ctx.beginPath(); ctx.arc(s.x, s.y, 4.5, 0, 7); ctx.fill(); }
+    if (!(ship.inv > 0 && Math.floor(ship.inv * 10) % 2)) {
+      ctx.save(); ctx.translate(ship.x, ship.y); ctx.rotate(-Math.PI / 4 * (T.hero === '🚀' ? 1 : 0));
+      drawEmoji(T.hero, 0, 0, 42); ctx.restore();
+    }
+    drawFx();
+    hud(`${'❤️'.repeat(Math.max(0, lives))}`, `שלב ${level}${triple > 0 ? ' · 🔱' : ''} · ⭐ ${fmt(G.score)}`);
+  },
+};
+
+</script>
+<script>
+"use strict";
+window.addEventListener('resize', fit);
+fit();
+if (game.init) game.init();
+if (game.autostart) { G.state = 'play'; game.reset(); } else menu();
+booted = true;
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.state === 'play') game.update(dt);
+  updFx(G.state === 'pause' ? 0 : dt);
+  game.draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
